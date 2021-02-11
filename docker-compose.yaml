@@ -1,0 +1,33 @@
+version: '3.7'
+
+services:
+  cere-block-scanner-service:
+    build:
+      context: ./
+      args:
+        NPM_TOKEN: ${NPM_TOKEN}
+    container_name: cere-block-scanner-service
+    ports:
+      - 2015:2015
+    logging:
+      driver: json-file
+    volumes:
+      - ./:/app
+    environment:
+      - NPM_TOKEN=${NPM_TOKEN}
+
+    depends_on:
+      - cere-block-scanner-serivce-db
+
+  cere-block-scanner-serivce-db:
+    image: postgres:9-alpine
+    container_name: cere-block-scanner-db
+    environment:
+      POSTGRES_USER: block-scanner-service
+      POSTGRES_PASSWORD: block-scanner-service
+      POSTGRES_DB: block-scanner-service
+      PGDATA: /var/lib/postgresql/data/pgdata
+    volumes:
+      - ./pgdata-block-scanner/:/var/lib/postgresql/data/pgdata
+    logging:
+      driver: none

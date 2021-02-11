@@ -102,3 +102,7 @@ Then enter generated command from console:
 ```bash
 docker login -u AWS -p PASSWORD
 ```
+## Run project from docker-compose (DEV env):
+```
+docker-compose --env-file ./configs/.env.dev up -d
+```
