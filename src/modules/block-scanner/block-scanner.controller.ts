@@ -8,11 +8,19 @@ import {ServiceResponse} from '@cere/ms-core';
 @ApiInternalServerErrorResponse({description: 'Internal server error.', type: ServiceResponse})
 @ApiGatewayTimeoutResponse({description: 'Gateway timeout exception.', type: ServiceResponse})
 export class BlockScannerController {
-  public constructor(@Inject(BlockScannerService) private readonly appService: BlockScannerServiceInterface) {}
+  public constructor(@Inject(BlockScannerService) private readonly appService: BlockScannerServiceInterface,
+  private readonly blockScannerService: BlockScannerService
+  ) { }
 
   @Get()
   @ApiOkResponse({description: 'Hello world!', type: ServiceResponse})
   public getHello(): string {
     return 'Hello world!';
+  }
+
+  @Get("fetch")
+  public async fetch(): Promise<any>{
+    const result = await this.blockScannerService.fetchBlock();
+    return result;
   }
 }

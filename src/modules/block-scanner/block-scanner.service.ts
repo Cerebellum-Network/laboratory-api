@@ -28,13 +28,13 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   }
 
   public async init(): Promise<ApiPromise> {
-    const wsProvider = new WsProvider('wss://rpc.polkadot.io');
+    const wsProvider = new WsProvider('wss://testnet-node-0.cere.network:9945');
     this.api = await ApiPromise.create({provider: wsProvider});
     await this.api.isReady;
     return this.api;
   }
 
-  public scanChain(): Promise<any> {
+  public scanChain(): void {
     this.api.derive.chain.subscribeNewHeads(async(header) => {
       console.log(`#${header.number}: ${header.author}`);
       // await this.processChain(header);
@@ -52,4 +52,10 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     });
   }
 
+  public async fetchBlock(): Promise<any>{
+    console.log('fetch Block');
+    const block = await this.blockEntityRepository.find();
+    console.log(block);
+    return block;
+  }
 }
