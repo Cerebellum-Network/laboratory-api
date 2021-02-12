@@ -4,8 +4,9 @@ import {BlockScannerService} from './block-scanner.service';
 import {ConfigModule} from '@cere/ms-core';
 import {TypeOrmModule} from '@nestjs/typeorm';
 import {BlockEntity} from './entities/block.entity';
+import {TransactionEntity} from './entities/transaction.entity';
 @Module({
-  imports: [ConfigModule, TypeOrmModule.forFeature([BlockEntity]), ConfigModule],
+  imports: [ConfigModule, TypeOrmModule.forFeature([BlockEntity, TransactionEntity]), ConfigModule],
   controllers: [BlockScannerController],
   providers: [BlockScannerService],
   exports: [],
