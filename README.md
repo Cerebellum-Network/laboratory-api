@@ -105,7 +105,7 @@ docker login -u AWS -p PASSWORD
 ## Run project from docker-compose (DEV env):
 #### Send files:
 ```bash
-rsync -av -e ssh --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='pgdata-block-scanner' ./ block_scanner_api:/root/block-scanner
+rsync -av -e ssh --exclude='.idea' --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='pgdata-block-scanner' ./ block_scanner_api:/root/block-scanner
 ```
 #### Start service
 ```
