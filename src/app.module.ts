@@ -1,5 +1,4 @@
 import {Module} from '@nestjs/common';
-import {BlockScannerService} from './modules/block-scanner/block-scanner.service';
 import {
   BuildModule,
   ConfigModule,
@@ -7,12 +6,13 @@ import {
   HealthCheckController,
   LoggerModule,
   TracingModule,
+  DatabaseModule,
 } from '@cere/ms-core';
 import {BlockScannerModule} from './modules/block-scanner/block-scanner.module';
 
 @Module({
-  imports: [BlockScannerModule, ConfigModule, BuildModule, CrashlyticModule, TracingModule.TracingModule, LoggerModule],
+  imports: [BlockScannerModule, ConfigModule, BuildModule, CrashlyticModule, TracingModule.TracingModule, LoggerModule, DatabaseModule],
   controllers: [HealthCheckController],
-  providers: [BlockScannerService],
+  providers: [],
 })
 export class AppModule {}
