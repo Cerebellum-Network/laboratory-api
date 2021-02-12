@@ -7,6 +7,7 @@ services:
       args:
         NPM_TOKEN: ${NPM_TOKEN}
     container_name: cere-block-scanner-service
+    restart: always
     ports:
       - 2015:2015
     logging:
@@ -15,11 +16,25 @@ services:
       - ./:/app
     environment:
       - NPM_TOKEN=${NPM_TOKEN}
-
+      - DB_HOST=cere-block-scanner-db
+      - DB_USERNAME=block-scanner-service
+      - DB_PASSWORD=block-scanner-service
+      - DB_DATABASE=block-scanner-service
+      - DB_PORT=5432
+      - DB_SYNCHRONIZE=true
+      - DB_LOGGING=true
+      - DB_ENTITIES=**/*.entity.js
+      - DB_CONNECTION_ALIVE=false
+      - CRASHLYTIC_KEY=https://3fe337e362cf4bfd9ef9c0969df21c9a@o318183.ingest.sentry.io/5629770
+      - JAEGER_SERVICE_NAME=block-scanner-service
+      - JAEGER_SAMPLER_TYPE=const
+      - JAEGER_SAMPLER_PARAM=1
+      - LOG_LEVEL=debug
+      - NETWORK_WS_URL=wss://testnet-node-0.cere.network:9945
     depends_on:
-      - cere-block-scanner-serivce-db
+      - cere-block-scanner-db
 
-  cere-block-scanner-serivce-db:
+  cere-block-scanner-db:
     image: postgres:9-alpine
     container_name: cere-block-scanner-db
     environment:

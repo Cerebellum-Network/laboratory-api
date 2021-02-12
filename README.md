@@ -109,5 +109,5 @@ rsync -av -e ssh --exclude='node_modules' --exclude='dist' --exclude='pgdata-blo
 ```
 #### Start service
 ```
-docker-compose --env-file ./configs/.env.dev up -d
+docker-compose up -d
 ```
