@@ -12,6 +12,8 @@ async function bootstrap() {
 
   const app = await CereApplication.create(AppModule);
 
+  app.enableCors();
+
   const configService = app.select(ConfigModule).get(ConfigService);
   const crashlyticService: CrashlyticService = app.select(CrashlyticModule).get(CrashlyticService);
   crashlyticService.init(configService.getCrashlyticKey(), configService.getEnv());

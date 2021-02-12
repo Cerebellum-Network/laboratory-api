@@ -12,8 +12,6 @@ services:
       - 2015:2015
     logging:
       driver: json-file
-    volumes:
-      - ./:/app
     environment:
       - NPM_TOKEN=${NPM_TOKEN}
       - DB_HOST=cere-block-scanner-db
