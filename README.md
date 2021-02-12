@@ -13,7 +13,7 @@ $ npm install
 ```
 
 ## Swagger
-http://localhost:PORT/SERVICE_NAME/swagger/#/
+http://localhost:2015/block-scanner/swagger/#/
 
 ## Running the app
 
@@ -45,23 +45,23 @@ $ npm run test:cov
 
 ### Create or import database:
 ```bash
-sudo -u postgres psql -c "create database \"REPLACE_ME\";"
-sudo -u postgres psql -c "create user \"REPLACE_ME\" with encrypted password 'REPLACE_ME';"
-sudo -u postgres psql -c "grant all privileges on database \"REPLACE_ME\" to \"REPLACE_ME\";"
+sudo -u postgres psql -c "create database \"block-scanner-service\";"
+sudo -u postgres psql -c "create user \"block-scanner-service\" with encrypted password 'block-scanner-service';"
+sudo -u postgres psql -c "grant all privileges on database \"block-scanner-service\" to \"block-scanner-service\";"
 ```
 
 ### Drop tables (in case of clear)
 ```bash
-sudo -u postgres psql -c "drop database \"REPLACE_ME\";"
-sudo -u postgres psql -c "create database \"REPLACE_ME\";"
-sudo -u postgres psql -c "grant all privileges on database \"REPLACE_ME\" to \"REPLACE_ME\";"
+sudo -u postgres psql -c "drop database \"block-scanner-service\";"
+sudo -u postgres psql -c "create database \"block-scanner-service\";"
+sudo -u postgres psql -c "grant all privileges on database \"block-scanner-service\" to \"block-scanner-service\";"
 ```
 
 ### Configure test environment
 ```bash
-sudo -u postgres psql -c "create database \"REPLACE_ME-test\";"
-sudo -u postgres psql -c "create user \"REPLACE_ME-test\" with encrypted password 'REPLACE_ME-test';"
-sudo -u postgres psql -c "grant all privileges on database \"REPLACE_ME-test\" to \"REPLACE_ME-test\";"
+sudo -u postgres psql -c "create database \"block-scanner-service-test\";"
+sudo -u postgres psql -c "create user \"block-scanner-service-test\" with encrypted password 'block-scanner-service-test';"
+sudo -u postgres psql -c "grant all privileges on database \"block-scanner-service-test\" to \"block-scanner-service-test\";"
 ```
 
 ## Build and run docker locally
@@ -88,11 +88,11 @@ npm run send:build:to:ecr
 #### Method 2: Manual
 Build container locally:
 ```bash
-docker build -t 524725240689.dkr.ecr.us-west-2.amazonaws.com/crb-REPLACE_ME-service:latest .
+docker build -t 524725240689.dkr.ecr.us-west-2.amazonaws.com/crb-block-scanner-service:latest .
 ```
 Push to ECR:
 ```bash
-docker push 524725240689.dkr.ecr.us-west-2.amazonaws.com/crb-REPLACE_ME-service:latest
+docker push 524725240689.dkr.ecr.us-west-2.amazonaws.com/crb-block-scanner-service:latest
 ```
 If login expired, login (PROFILE_NAME can be taken from ~/.aws/credentials):
 ```bash

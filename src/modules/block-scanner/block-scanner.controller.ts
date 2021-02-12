@@ -1,26 +1,23 @@
-import {Controller, Get, Inject} from '@nestjs/common';
+import {Controller, Get, Inject, Param} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {BlockScannerService} from './block-scanner.service';
-import {ApiGatewayTimeoutResponse, ApiInternalServerErrorResponse, ApiOkResponse} from '@nestjs/swagger';
+import {ApiGatewayTimeoutResponse, ApiInternalServerErrorResponse, ApiTags} from '@nestjs/swagger';
 import {ServiceResponse} from '@cere/ms-core';
+import {BlockDto} from './dto/block.dto';
 
 @Controller()
 @ApiInternalServerErrorResponse({description: 'Internal server error.', type: ServiceResponse})
 @ApiGatewayTimeoutResponse({description: 'Gateway timeout exception.', type: ServiceResponse})
+@ApiTags('Block Scanner')
 export class BlockScannerController {
   public constructor(@Inject(BlockScannerService) private readonly appService: BlockScannerServiceInterface,
   private readonly blockScannerService: BlockScannerService
   ) { }
 
-  @Get()
-  @ApiOkResponse({description: 'Hello world!', type: ServiceResponse})
-  public getHello(): string {
-    return 'Hello world!';
-  }
-
-  @Get("fetch")
-  public async fetch(): Promise<any>{
-    const result = await this.blockScannerService.fetchBlock();
-    return result;
+  @Get('account-transactions/:accountId')
+  public accountTransactions(
+    @Param('accountId') accountId: string,
+  ): Promise<BlockDto[]>{
+    return this.blockScannerService.getAccountTransactions(accountId);
   }
 }
