@@ -20,7 +20,7 @@ export class BlockEntity {
   @Column()
   public extrinsicRoot: string;
 
-  @Column()
+  @Column({nullable: true})
   public authorPublicKey: string;
 
   @Column()

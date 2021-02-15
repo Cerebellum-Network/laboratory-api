@@ -1,3 +1,4 @@
+/* eslint-disable import/no-extraneous-dependencies */
 import {Injectable, Logger, Module} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {ApiPromise, WsProvider} from '@polkadot/api';
@@ -12,6 +13,7 @@ import {GenericEventData} from '@polkadot/types';
 import {u8aToHex} from '@polkadot/util';
 import {blake2AsU8a} from '@polkadot/util-crypto';
 import {BlockHash} from '@polkadot/types/interfaces/chain';
+import Database from 'better-sqlite3';
 
 export interface ISanitizedEvent {
   method: string;
@@ -53,7 +55,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     this.logger.debug('About to scan the network');
 
     await this.init();
-    await this.scanChain();
+    await this.processOldBlock();
+
   }
 
   public async init(): Promise<ApiPromise> {
@@ -66,45 +69,72 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     return this.api;
   }
 
-  public scanChain(): void {
-    this.api.derive.chain.subscribeNewHeads(async (header) => {
-      this.logger.log(`#${header.number}: ${header.author}`);
+  // Process the blocks from where it has been leftout to current block
+  public async processOldBlock(): Promise<any> {
+    const query = this.blockEntityRepository
+      .createQueryBuilder('blocks')
+      .select('MAX(blocks.blockNumber)', 'blockNumber');
+    const syncedBlock = await query.getRawOne();
+    let latestBlock = await this.api.rpc.chain.getHeader();
+    const start = syncedBlock.blockNumber;
+    // TODO: use start variable instead of number
+    for (let i = start; i <= Number(latestBlock.number); i += 1) {
+      await this.scanChain(i);
+      latestBlock = await this.api.rpc.chain.getHeader();
+    }
+    this.processBlock();
+  }
 
-      // await this.processChain(header);
-      const blockHash = await this.api.rpc.chain.getBlockHash(header.number.toBigInt());
-      const momentPrev = await this.api.query.timestamp.now.at(header.parentHash);
-      const blockEntity = new BlockEntity();
-      blockEntity.authorPublicKey = header.author?.toString();
-      blockEntity.destinationPublicKey = ''; // TODO: add destination
-      blockEntity.stateRoot = header.stateRoot.toString();
-      blockEntity.parentHash = header.parentHash.toString();
-      blockEntity.blockNumber = header.number.toString();
-      blockEntity.blockHash = blockHash.toString();
-      blockEntity.timestamp = new Date(momentPrev.toNumber());
-      blockEntity.extrinsicRoot = header.extrinsicsRoot.toString();
+  // Process the current blocks.
+  public async processBlock(): Promise<any>{
+    const query = this.blockEntityRepository
+      .createQueryBuilder('blocks')
+      .select('MAX(blocks.blockNumber)', 'blockNumber');
+    const syncedBlock = await query.getRawOne();
+    const latestBlock = await this.api.rpc.chain.getHeader();
+    if (syncedBlock.blockNumber !== latestBlock.number) {
+      await this.processOldBlock();
+    } else {
+      this.api.derive.chain.subscribeNewHeads(async (header) => {
+        await this.scanChain(Number(header.number));
+      })
+    }
+  }
 
-      await this.blockEntityRepository.save(blockEntity);
+  public async scanChain(blockNumber: number): Promise<any> {
+    const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
+    const momentPrev = await this.api.query.timestamp.now.at(blockHash);
+    const header = await this.api.derive.chain.getHeader(blockHash);
+    const blockEntity = new BlockEntity();
+    blockEntity.authorPublicKey = header.author?.toString();
+    blockEntity.destinationPublicKey = ''; // TODO: add destination
+    blockEntity.stateRoot = header.stateRoot.toString();
+    blockEntity.parentHash = header.parentHash.toString();
+    blockEntity.blockNumber = header.number.toString();
+    blockEntity.blockHash = blockHash.toString();
+    blockEntity.timestamp = new Date(momentPrev.toNumber());
+    blockEntity.extrinsicRoot = header.extrinsicsRoot.toString();
 
-      const blockData = await this.fetchBlock(blockHash);
-      const transaction = await this.processExtrinsics(blockData.extrinsics, blockData.number);
-      // console.log(transaction);
-      // console.log(transaction.nonce.toString());
-      for (const txn of transaction) {
-        console.log(txn);
-        const transactionEntity = new TransactionEntity();
-        transactionEntity.blockNumber = header.number.toString();
+    await this.blockEntityRepository.save(blockEntity);
 
-        transactionEntity.nonce = txn.nonce;
-        transactionEntity.senderId = txn.senderId;
-        transactionEntity.transactionIndex = txn.txnIndex;
-        transactionEntity.args = txn.args;
-        transactionEntity.signature = txn.signature;
-        transactionEntity.events = txn.events;
-        transactionEntity.transactionHash = txn.transactionId;
+    const blockData = await this.fetchBlock(blockHash);
+    const transaction = await this.processExtrinsics(blockData.extrinsics, blockData.number);
+    // console.log(transaction);
+    // console.log(transaction.nonce.toString());
+    for (const txn of transaction) {
+      const transactionEntity = new TransactionEntity();
+      transactionEntity.blockNumber = blockNumber.toString();
 
-        await this.transactionEntityRepository.save(transactionEntity);
-      }
-    });
+      transactionEntity.nonce = txn.nonce;
+      transactionEntity.senderId = txn.senderId;
+      transactionEntity.transactionIndex = txn.txnIndex;
+      transactionEntity.args = txn.args;
+      transactionEntity.signature = txn.signature;
+      transactionEntity.events = txn.events;
+      transactionEntity.transactionHash = txn.transactionId;
+
+      await this.transactionEntityRepository.save(transactionEntity);
+    }
   }
 
   public async getAccountTransactions(accountId: string): Promise<BlockDto[]> {
