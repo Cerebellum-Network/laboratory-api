@@ -1,13 +1,10 @@
 /* eslint-disable @typescript-eslint/ban-types */
 import {Column, Entity, PrimaryGeneratedColumn} from 'typeorm';
 
-@Entity('transaction')
+@Entity('transactions')
 export class TransactionEntity {
   @PrimaryGeneratedColumn()
   public id: number;
-
-  @Column({nullable: true})
-  public blockNumber: string;
 
   @Column({nullable: true})
   public transactionHash: string;
@@ -28,9 +25,14 @@ export class TransactionEntity {
   public nonce: string;
 
   @Column({nullable: true})
-  public args: string;
+  public destination: string;
+
+  @Column({nullable: true})
+  public value: string;
 
   @Column('jsonb', {nullable: true})
   public events: object[];
 
+  @Column({nullable: true})
+  public args: string;
 }

@@ -1,5 +1,6 @@
+/* eslint-disable prefer-destructuring */
 /* eslint-disable import/no-extraneous-dependencies */
-import {Injectable, Logger, Module} from '@nestjs/common';
+import {Injectable, Logger} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import {BlockEntity} from './entities/block.entity';
@@ -9,11 +10,14 @@ import {InjectConnection, InjectRepository} from '@nestjs/typeorm';
 import {ConfigService} from '@cere/ms-core';
 import {toBlockDto} from './mapper/position.mapper';
 import {BlockDto} from './dto/block.dto';
-import {GenericEventData} from '@polkadot/types';
+import {GenericEventData, Struct} from '@polkadot/types';
 import {u8aToHex} from '@polkadot/util';
 import {blake2AsU8a} from '@polkadot/util-crypto';
 import {BlockHash} from '@polkadot/types/interfaces/chain';
-import Database from 'better-sqlite3';
+import {GenericCall} from '@polkadot/types/generic';
+import {Codec, Registry} from '@polkadot/types/types';
+import {TransactionDto} from './dto/transaction.dto';
+import {toTransactionDto} from './mapper/transaction.mapper'
 
 export interface ISanitizedEvent {
   method: string;
@@ -56,7 +60,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
     await this.init();
     await this.processOldBlock();
-
   }
 
   public async init(): Promise<ApiPromise> {
@@ -74,11 +77,11 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     const query = this.blockEntityRepository
       .createQueryBuilder('blocks')
       .select('MAX(blocks.blockNumber)', 'blockNumber');
+    
     const syncedBlock = await query.getRawOne();
     let latestBlock = await this.api.rpc.chain.getHeader();
-    const start = syncedBlock.blockNumber;
-    // TODO: use start variable instead of number
-    for (let i = start; i <= Number(latestBlock.number); i += 1) {
+    const start = Number(syncedBlock.blockNumber);
+    for (let i: number = start; i <= Number(latestBlock.number); i += 1) {
       await this.scanChain(i);
       latestBlock = await this.api.rpc.chain.getHeader();
     }
@@ -86,65 +89,64 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   }
 
   // Process the current blocks.
-  public async processBlock(): Promise<any>{
+  public async processBlock(): Promise<any> {
     const query = this.blockEntityRepository
       .createQueryBuilder('blocks')
       .select('MAX(blocks.blockNumber)', 'blockNumber');
     const syncedBlock = await query.getRawOne();
     const latestBlock = await this.api.rpc.chain.getHeader();
-    if (syncedBlock.blockNumber !== latestBlock.number) {
+    if (Number(syncedBlock.blockNumber) !== Number(latestBlock.number)) {
       await this.processOldBlock();
     } else {
       this.api.derive.chain.subscribeNewHeads(async (header) => {
         await this.scanChain(Number(header.number));
-      })
+      });
     }
   }
 
   public async scanChain(blockNumber: number): Promise<any> {
-    const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
-    const momentPrev = await this.api.query.timestamp.now.at(blockHash);
-    const header = await this.api.derive.chain.getHeader(blockHash);
-    const blockEntity = new BlockEntity();
-    blockEntity.authorPublicKey = header.author?.toString();
-    blockEntity.destinationPublicKey = ''; // TODO: add destination
-    blockEntity.stateRoot = header.stateRoot.toString();
-    blockEntity.parentHash = header.parentHash.toString();
-    blockEntity.blockNumber = header.number.toString();
-    blockEntity.blockHash = blockHash.toString();
-    blockEntity.timestamp = new Date(momentPrev.toNumber());
-    blockEntity.extrinsicRoot = header.extrinsicsRoot.toString();
-
-    await this.blockEntityRepository.save(blockEntity);
-
-    const blockData = await this.fetchBlock(blockHash);
-    const transaction = await this.processExtrinsics(blockData.extrinsics, blockData.number);
-    // console.log(transaction);
-    // console.log(transaction.nonce.toString());
-    for (const txn of transaction) {
-      const transactionEntity = new TransactionEntity();
-      transactionEntity.blockNumber = blockNumber.toString();
-
-      transactionEntity.nonce = txn.nonce;
-      transactionEntity.senderId = txn.senderId;
-      transactionEntity.transactionIndex = txn.txnIndex;
-      transactionEntity.args = txn.args;
-      transactionEntity.signature = txn.signature;
-      transactionEntity.events = txn.events;
-      transactionEntity.transactionHash = txn.transactionId;
-
-      await this.transactionEntityRepository.save(transactionEntity);
+    try {
+      const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
+      const momentPrev = await this.api.query.timestamp.now.at(blockHash);
+       // Fetch block data
+      const blockData = await this.fetchBlock(blockHash);
+      const blockEntity = new BlockEntity();
+      blockEntity.authorPublicKey = blockData.authorId?.toString();
+      blockEntity.stateRoot = blockData.stateRoot.toString();
+      blockEntity.parentHash = blockData.parentHash.toString();
+      blockEntity.blockNumber = blockData.number.toString();
+      blockEntity.blockHash = blockHash.toString();
+      blockEntity.timestamp = new Date(momentPrev.toNumber());
+      blockEntity.extrinsicRoot = blockData.extrinsicsRoot.toString();
+      await this.blockEntityRepository.save(blockEntity);
+  
+      await this.processExtrinsics(blockData.extrinsics, blockData.number);
+    } catch (error) {
+      console.log(`ScanChain Error: ${error}`);
     }
+   
   }
 
   public async getAccountTransactions(accountId: string): Promise<BlockDto[]> {
     this.logger.debug('About to fetch the Block');
     const blocks = await this.blockEntityRepository.find({
-      where: [{authorPublicKey: accountId}, {destinationPublicKey: accountId}],
+      where: {authorPublicKey: accountId},
     });
     this.logger.debug(blocks);
 
     return blocks.map((block) => toBlockDto(block));
+  }
+ 
+  public async getTransaction(accountId: string): Promise<TransactionDto[]>{
+    this.logger.debug('About to fetch the transaction');
+
+    const transactions = await this.transactionEntityRepository.find({
+      where: {senderId: accountId}
+    });
+
+    this.logger.debug(transactions);
+    return transactions.map((transaction) => toTransactionDto(transaction));
+     
   }
 
   private async fetchBlock(hash: BlockHash): Promise<any> {
@@ -173,8 +175,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       const hash = u8aToHex(blake2AsU8a(extrinsic.toU8a(), 256));
 
       return {
-        // method: `${method.sectionName}.${method.methodName}`,
-        // method,
+        method: `${method.section}.${method.method}`,
         signature: isSigned ? {signature, signer} : null,
         nonce,
         args,
@@ -278,36 +279,89 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   }
 
   private processExtrinsics(extrinsic: any, blockNum: any): any {
-    const data = [];
-    const events = [];
-    extrinsic.forEach((txn, index) => {
-      txn.events.forEach((value, index) => {
-        const method = value.method.split('.');
-        const eventData = {
-          id: `${blockNum}-${index}`,
-          module: method[0],
-          method: method[1],
-          data: value.data?.toString(),
-          weight: value.data[0].weight,
-          paysFee: value.data[0].paysFee,
-          class: value.data[0].class,
-        };
-        events.push(eventData);
-        // console.log(`${blockNum}-${index}  --  method: ${method[0]}   Event:${method[1]}`);
-        // console.log(`data: weight:${value.data[0].weight} paysFee:${value.data[0].paysFee}  class:${value.data[0].class}`)
+    try {
+      const events = [];
+      const transferMethods = ['balances.transfer', 'balances.transferKeepAlive'];
+      extrinsic.forEach(async (txn, index) => {
+        txn.events.forEach((value, index) => {
+          const method = value.method.split('.');
+          const eventData = {
+            id: `${blockNum}-${index}`,
+            module: method[0],
+            method: method[1],
+          };
+          events.push(eventData);
+        });
+        const transactionEntity = new TransactionEntity();
+        transactionEntity.transactionHash = txn.hash?.toString();
+        transactionEntity.events = events;
+        transactionEntity.nonce = txn.nonce?.toString();
+        transactionEntity.transactionIndex = index;
+        transactionEntity.success = txn.success;
+        transactionEntity.signature = txn.signature?.signature.toString();
+        transactionEntity.senderId = txn.signature?.signer.toString();
+        if (transferMethods.includes(txn.method)) {
+          transactionEntity.destination = txn.args[0];
+          transactionEntity.value = txn.args[1];
+          transactionEntity.args = null;
+        } else {
+          transactionEntity.destination = null;
+          transactionEntity.value = null;
+          transactionEntity.args = txn.args;
+        }
+       await this.transactionEntityRepository.save(transactionEntity);
       });
-      const result = {
-        senderId: txn.signature?.signer.toString() || null,
-        transactionId: txn.hash?.toString() || null,
-        signature: txn.signature?.signature.toString() || null,
-        txnIndex: index,
-        success: txn.success,
-        nonce: txn.nonce?.toString() || null,
-        args: txn.args.toString(),
-        events,
-      };
-      data.push(result);
+    } catch (error) {
+      console.log(`error: ${error}`);
+      process.exit(1);
+    }
+  }
+
+  private parseGenericCall(genericCall: GenericCall, registry: Registry): ISanitizedCall {
+    const newArgs = {};
+
+    // Pull out the struct of arguments to this call
+    const callArgs = genericCall.get('args') as Struct;
+
+    // Make sure callArgs exists and we can access its keys
+    if (callArgs && callArgs.defKeys) {
+      // paramName is a string
+      for (const paramName of callArgs.defKeys) {
+        const argument = callArgs.get(paramName);
+
+        if (Array.isArray(argument)) {
+          newArgs[paramName] = this.parseArrayGenericCalls(argument, registry);
+        } else if (argument instanceof GenericCall) {
+          newArgs[paramName] = this.parseGenericCall(argument, registry);
+        } else if (paramName === 'call' && argument?.toRawType() === 'Bytes') {
+          // multiSig.asMulti.args.call is an OpaqueCall (Vec<u8>) that we
+          // serialize to a polkadot-js Call and parse so it is not a hex blob.
+          try {
+            const call = registry.createType('Call', argument.toHex());
+            newArgs[paramName] = this.parseGenericCall(call, registry);
+          } catch {
+            newArgs[paramName] = argument;
+          }
+        } else {
+          newArgs[paramName] = argument;
+        }
+      }
+    }
+
+    return {
+      method: `${genericCall.section}.${genericCall.method}`,
+      callIndex: genericCall.callIndex,
+      args: newArgs,
+    };
+  }
+
+  private parseArrayGenericCalls(argsArray: Codec[], registry: Registry): (Codec | ISanitizedCall)[] {
+    return argsArray.map((argument) => {
+      if (argument instanceof GenericCall) {
+        return this.parseGenericCall(argument, registry);
+      }
+
+      return argument;
     });
-    return data;
   }
 }
