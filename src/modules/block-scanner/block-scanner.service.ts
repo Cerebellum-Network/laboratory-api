@@ -76,12 +76,12 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public async processOldBlock(): Promise<any> {
     const query = this.blockEntityRepository
       .createQueryBuilder('blocks')
-      .select('MAX(blocks.blockNumber)', 'blockNumber');
+      .select('MAX(CAST( blocks.blockNumber AS INT))', 'blockNumber');
     
     const syncedBlock = await query.getRawOne();
     let latestBlock = await this.api.rpc.chain.getHeader();
     const start = Number(syncedBlock.blockNumber);
-    for (let i: number = start; i <= Number(latestBlock.number); i += 1) {
+    for (let i: number = start + 1; i <= Number(latestBlock.number); i += 1) {
       await this.scanChain(i);
       latestBlock = await this.api.rpc.chain.getHeader();
     }
@@ -92,7 +92,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public async processBlock(): Promise<any> {
     const query = this.blockEntityRepository
       .createQueryBuilder('blocks')
-      .select('MAX(blocks.blockNumber)', 'blockNumber');
+      .select('MAX(CAST( blocks.blockNumber AS INT))', 'blockNumber');
     const syncedBlock = await query.getRawOne();
     const latestBlock = await this.api.rpc.chain.getHeader();
     if (Number(syncedBlock.blockNumber) !== Number(latestBlock.number)) {
@@ -307,7 +307,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         } else {
           transactionEntity.destination = null;
           transactionEntity.value = null;
-          transactionEntity.args = txn.args;
+          transactionEntity.args = txn.args?.toString();
         }
        await this.transactionEntityRepository.save(transactionEntity);
       });
