@@ -81,7 +81,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     const syncedBlock = await query.getRawOne();
     let latestBlock = await this.api.rpc.chain.getHeader();
     const start = Number(syncedBlock.blockNumber);
-    for (let i: number = 3809275; i <= Number(latestBlock.number); i += 1) {
+    for (let i: number = start + 1; i <= Number(latestBlock.number); i += 1) {
       await this.scanChain(i);
       latestBlock = await this.api.rpc.chain.getHeader();
     }
