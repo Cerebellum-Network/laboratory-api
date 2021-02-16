@@ -13,11 +13,9 @@ export class TransactionDto {
 
   public nonce: string;
 
-  public destination: string;
-
-  public value: string;
-
   public events: object[];
 
   public args: string;
+
+  public method: string;
 }

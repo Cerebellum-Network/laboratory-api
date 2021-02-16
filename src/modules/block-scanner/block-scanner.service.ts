@@ -291,7 +291,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   private processExtrinsics(extrinsic: any, blockNum: any): any {
     try {
       const events = [];
-      const transferMethods = ['balances.transfer', 'balances.transferKeepAlive'];
+    // const transferMethods = ['balances.transfer', 'balances.transferKeepAlive'];
       extrinsic.forEach(async (txn, index) => {
         txn.events.forEach((value, index) => {
           const method = value.method.split('.');
@@ -302,6 +302,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
           };
           events.push(eventData);
         });
+
         const transactionEntity = new TransactionEntity();
         transactionEntity.transactionHash = txn.hash?.toString();
         transactionEntity.events = events;
@@ -310,15 +311,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         transactionEntity.success = txn.success;
         transactionEntity.signature = txn.signature?.signature.toString();
         transactionEntity.senderId = txn.signature?.signer.toString();
-        if (transferMethods.includes(txn.method)) {
-          transactionEntity.destination = txn.args[0];
-          transactionEntity.value = txn.args[1];
-          transactionEntity.args = null;
-        } else {
-          transactionEntity.destination = null;
-          transactionEntity.value = null;
-          transactionEntity.args = txn.args?.toString();
-        }
+        transactionEntity.args = txn.args?.toString();
+        transactionEntity.method = txn.method;
         await this.transactionEntityRepository.save(transactionEntity);
       });
     } catch (error) {

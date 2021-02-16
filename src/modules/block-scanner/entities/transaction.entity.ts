@@ -25,10 +25,7 @@ export class TransactionEntity {
   public nonce: string;
 
   @Column({nullable: true})
-  public destination: string;
-
-  @Column({nullable: true})
-  public value: string;
+  public method: string;
 
   @Column('jsonb', {nullable: true})
   public events: object[];

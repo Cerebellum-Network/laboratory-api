@@ -15,13 +15,11 @@ export const toTransactionDto = (data: TransactionEntity): TransactionDto => {
 
     nonce,
 
-    destination,
-
-    value,
-
     events,
 
     args,
+
+    method,
   } = data;
 
   return {
@@ -37,12 +35,10 @@ export const toTransactionDto = (data: TransactionEntity): TransactionDto => {
 
     nonce,
 
-    destination,
-
-    value,
-
     events,
 
     args,
+
+    method
   };
 };
