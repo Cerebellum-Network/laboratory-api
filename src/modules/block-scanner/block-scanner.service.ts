@@ -17,7 +17,7 @@ import {BlockHash} from '@polkadot/types/interfaces/chain';
 import {GenericCall} from '@polkadot/types/generic';
 import {Codec, Registry} from '@polkadot/types/types';
 import {TransactionDto} from './dto/transaction.dto';
-import {toTransactionDto} from './mapper/transaction.mapper'
+import {toTransactionDto} from './mapper/transaction.mapper';
 
 export interface ISanitizedEvent {
   method: string;
@@ -77,11 +77,11 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     const query = this.blockEntityRepository
       .createQueryBuilder('blocks')
       .select('MAX(CAST( blocks.blockNumber AS INT))', 'blockNumber');
-    
+
     const syncedBlock = await query.getRawOne();
     let latestBlock = await this.api.rpc.chain.getHeader();
     const start = Number(syncedBlock.blockNumber);
-    for (let i: number = start + 1; i <= Number(latestBlock.number); i += 1) {
+    for (let i: number = 3809275; i <= Number(latestBlock.number); i += 1) {
       await this.scanChain(i);
       latestBlock = await this.api.rpc.chain.getHeader();
     }
@@ -108,7 +108,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     try {
       const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
       const momentPrev = await this.api.query.timestamp.now.at(blockHash);
-       // Fetch block data
+      // Fetch block data
       const blockData = await this.fetchBlock(blockHash);
       const blockEntity = new BlockEntity();
       blockEntity.authorPublicKey = blockData.authorId?.toString();
@@ -119,34 +119,44 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       blockEntity.timestamp = new Date(momentPrev.toNumber());
       blockEntity.extrinsicRoot = blockData.extrinsicsRoot.toString();
       await this.blockEntityRepository.save(blockEntity);
-  
+
       await this.processExtrinsics(blockData.extrinsics, blockData.number);
     } catch (error) {
       console.log(`ScanChain Error: ${error}`);
     }
-   
   }
 
-  public async getAccountTransactions(accountId: string): Promise<BlockDto[]> {
+  public async getAccountTransactions(accountId: string, offset: number, limit: number): Promise<any> {
     this.logger.debug('About to fetch the Block');
-    const blocks = await this.blockEntityRepository.find({
-      where: {authorPublicKey: accountId},
-    });
-    this.logger.debug(blocks);
 
-    return blocks.map((block) => toBlockDto(block));
+    const [result, count] = await this.blockEntityRepository.findAndCount({
+      where: {authorPublicKey: accountId},
+      take: limit,
+      skip: offset,
+    });
+
+    this.logger.debug(result);
+    const data = await result.map((block) => toBlockDto(block));
+    return {
+      data,
+      count,
+    };
   }
- 
-  public async getTransaction(accountId: string): Promise<TransactionDto[]>{
+
+  public async getTransaction(accountId: string, offset: number, limit: number): Promise<any> {
     this.logger.debug('About to fetch the transaction');
 
-    const transactions = await this.transactionEntityRepository.find({
-      where: {senderId: accountId}
+    const [result, count] = await this.transactionEntityRepository.findAndCount({
+      where: {senderId: accountId},
+      take: limit,
+      skip: offset,
     });
-
-    this.logger.debug(transactions);
-    return transactions.map((transaction) => toTransactionDto(transaction));
-     
+    this.logger.debug(result);
+    const data = await result.map((transaction) => toTransactionDto(transaction));
+    return {
+      data,
+      count,
+    };
   }
 
   private async fetchBlock(hash: BlockHash): Promise<any> {
@@ -309,7 +319,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
           transactionEntity.value = null;
           transactionEntity.args = txn.args?.toString();
         }
-       await this.transactionEntityRepository.save(transactionEntity);
+        await this.transactionEntityRepository.save(transactionEntity);
       });
     } catch (error) {
       console.log(`error: ${error}`);
