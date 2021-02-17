@@ -64,7 +64,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     const wsProvider = new WsProvider(networkWsUrl);
     this.api = await ApiPromise.create({provider: wsProvider});
     await this.api.isReady;
-
+    const chain = await this.api.rpc.system.chain();
+    this.logger.log(`Connected to ${chain}`)
     return this.api;
   }
 
@@ -285,29 +286,33 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   private processExtrinsics(extrinsic: any, blockNum: any): any {
     try {
       const events = [];
-      // const transferMethods = ['balances.transfer', 'balances.transferKeepAlive'];
+      const transferMethods = ['balances.transfer', 'balances.transferKeepAlive', 'contracts.instantiate', 'contracts.putCode', 'contracts.call'];
       extrinsic.forEach(async (txn, index) => {
-        txn.events.forEach((value) => {
-          const method = value.method.split('.');
-          const eventData = {
-            id: `${blockNum}-${index}`,
-            module: method[0],
-            method: method[1],
-          };
-          events.push(eventData);
-        });
+        if (transferMethods.includes(txn.method)) {
+          txn.events.forEach((value) => {
+            const method = value.method.split('.');
+            const eventData = {
+              id: `${blockNum}-${index}`,
+              module: method[0],
+              method: method[1],
+            };
+            events.push(eventData);
+          });
 
-        const transactionEntity = new TransactionEntity();
-        transactionEntity.transactionHash = txn.hash?.toString();
-        transactionEntity.events = events;
-        transactionEntity.nonce = txn.nonce?.toString();
-        transactionEntity.transactionIndex = index;
-        transactionEntity.success = txn.success;
-        transactionEntity.signature = txn.signature?.signature.toString();
-        transactionEntity.senderId = txn.signature?.signer.toString();
-        transactionEntity.args = txn.args?.toString();
-        transactionEntity.method = txn.method;
-        await this.transactionEntityRepository.save(transactionEntity);
+          const transactionEntity = new TransactionEntity();
+          transactionEntity.transactionHash = txn.hash?.toString();
+          transactionEntity.events = events;
+          transactionEntity.nonce = txn.nonce?.toString();
+          transactionEntity.transactionIndex = index;
+          transactionEntity.success = txn.success;
+          transactionEntity.signature = txn.signature?.signature.toString();
+          transactionEntity.senderId = txn.signature?.signer.toString();
+          transactionEntity.args = txn.args?.toString();
+          transactionEntity.method = txn.method;
+          await this.transactionEntityRepository.save(transactionEntity);
+        } else {
+          this.logger.log(`No Transaction for block: ${blockNum}\n\n`);
+        }
       });
     } catch (error) {
       this.logger.error(error);
