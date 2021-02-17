@@ -1,4 +1,3 @@
-
 export class BlockDto {
   public id: number;
 
@@ -14,8 +13,5 @@ export class BlockDto {
 
   public authorPublicKey: string;
 
-  public destinationPublicKey: string;
-
   public timestamp: Date;
 }
-
