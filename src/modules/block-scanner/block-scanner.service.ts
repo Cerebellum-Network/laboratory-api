@@ -1,4 +1,3 @@
-/* eslint-disable import/no-extraneous-dependencies */
 import {Injectable, Logger} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {ApiPromise, WsProvider} from '@polkadot/api';
@@ -70,10 +69,10 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   }
 
   // Process the blocks from where it has been leftout to current block
-  public async processOldBlock(): Promise<any> {
+  public async processOldBlock(): Promise<void> {
     const query = this.blockEntityRepository
       .createQueryBuilder('blocks')
-      .select('MAX(CAST( blocks.blockNumber AS INT))', 'blockNumber');
+      .select('MAX(CAST( blocks.blockNumber  AS INT))', 'blockNumber');
 
     const syncedBlock = await query.getRawOne();
     let latestBlock = await this.api.rpc.chain.getHeader();
@@ -86,7 +85,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   }
 
   // Process the current blocks.
-  public async processBlock(): Promise<any> {
+  public async processBlock(): Promise<void> {
     const query = this.blockEntityRepository
       .createQueryBuilder('blocks')
       .select('MAX(CAST( blocks.blockNumber AS INT))', 'blockNumber');
@@ -103,7 +102,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public async scanChain(blockNumber: number): Promise<any> {
     try {
-      const blockHash = await this.api.rpc.chain.getBlockHash(blockNumber);
+      const blockHash: any = await this.api.rpc.chain.getBlockHash(blockNumber);
       const momentPrev = await this.api.query.timestamp.now.at(blockHash);
       // Fetch block data
       const blockData = await this.fetchBlock(blockHash);
@@ -134,13 +133,14 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
     this.logger.debug(result);
     const data = await result.map((block) => toBlockDto(block));
+
     return {
       data,
       count,
     };
   }
 
-  public async getTransaction(accountId: string, offset: number, limit: number): Promise<any> {
+  public async getTransactions(accountId: string, offset: number, limit: number): Promise<any> {
     this.logger.debug('About to fetch the transaction');
 
     const [result, count] = await this.transactionEntityRepository.findAndCount({
@@ -150,6 +150,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     });
     this.logger.debug(result);
     const data = await result.map((transaction) => toTransactionDto(transaction));
+
     return {
       data,
       count,
@@ -179,7 +180,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     const defaultSuccess = typeof events === 'string' ? events : false;
     const extrinsics = block.extrinsics.map((extrinsic) => {
       const {method, nonce, signature, signer, isSigned, tip, args} = extrinsic;
-      const hash = u8aToHex(blake2AsU8a(extrinsic.toU8a(), 256));
+      const convertedHash = u8aToHex(blake2AsU8a(extrinsic.toU8a(), 256));
 
       return {
         method: `${method.section}.${method.method}`,
@@ -188,7 +189,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         args,
         // newArgs: this.parseGenericCall(method).args,
         tip,
-        hash,
+        hash: convertedHash,
         info: {},
         events: [] as ISanitizedEvent[],
         success: defaultSuccess,
@@ -206,7 +207,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         const sanitizedEvent = {
           method: `${event.section}.${event.method}`,
           data: event.data,
-        };
+        } as any;
 
         if (phase.isApplyExtrinsic) {
           const extrinsicIdx = phase.asApplyExtrinsic.toNumber();
@@ -229,7 +230,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             const sanitizedData = event.data.toJSON() as any[];
 
             for (const data of sanitizedData) {
-              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
+              // eslint-disablRegistrye-next-line @typescript-eslint/no-unsafe-member-access
               if (data && data.paysFee) {
                 extrinsic.paysFee =
                   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -286,7 +287,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       const events = [];
       // const transferMethods = ['balances.transfer', 'balances.transferKeepAlive'];
       extrinsic.forEach(async (txn, index) => {
-        txn.events.forEach((value, index) => {
+        txn.events.forEach((value) => {
           const method = value.method.split('.');
           const eventData = {
             id: `${blockNum}-${index}`,
