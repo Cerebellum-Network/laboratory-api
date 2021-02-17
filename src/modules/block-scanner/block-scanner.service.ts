@@ -1,4 +1,3 @@
-/* eslint-disable prefer-destructuring */
 /* eslint-disable import/no-extraneous-dependencies */
 import {Injectable, Logger} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
@@ -9,14 +8,12 @@ import {Connection, Repository} from 'typeorm';
 import {InjectConnection, InjectRepository} from '@nestjs/typeorm';
 import {ConfigService} from '@cere/ms-core';
 import {toBlockDto} from './mapper/position.mapper';
-import {BlockDto} from './dto/block.dto';
 import {GenericEventData, Struct} from '@polkadot/types';
 import {u8aToHex} from '@polkadot/util';
 import {blake2AsU8a} from '@polkadot/util-crypto';
 import {BlockHash} from '@polkadot/types/interfaces/chain';
 import {GenericCall} from '@polkadot/types/generic';
 import {Codec, Registry} from '@polkadot/types/types';
-import {TransactionDto} from './dto/transaction.dto';
 import {toTransactionDto} from './mapper/transaction.mapper';
 
 export interface ISanitizedEvent {
@@ -122,7 +119,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
       await this.processExtrinsics(blockData.extrinsics, blockData.number);
     } catch (error) {
-      console.log(`ScanChain Error: ${error}`);
+      this.logger.error(error);
     }
   }
 
@@ -216,11 +213,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
           const extrinsic = extrinsics[extrinsicIdx];
 
           if (!extrinsic) {
-            //						throw new Error(
-            //							// eslint-disable-next-line @typescript-eslint/restrict-template-expressions
-            //							`Missing extrinsic ${extrinsicIdx} in block ${hash}`
-            //						);
-            console.error(`Block ${block.header.number.toNumber()} ${hash}: Missing extrinsic ${extrinsicIdx}`);
+            this.logger.error(`Block ${block.header.number.toNumber()} ${hash}: Missing extrinsic ${extrinsicIdx}`);
             // eslint-disable-next-line no-continue
             continue;
           }
@@ -291,7 +284,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   private processExtrinsics(extrinsic: any, blockNum: any): any {
     try {
       const events = [];
-    // const transferMethods = ['balances.transfer', 'balances.transferKeepAlive'];
+      // const transferMethods = ['balances.transfer', 'balances.transferKeepAlive'];
       extrinsic.forEach(async (txn, index) => {
         txn.events.forEach((value, index) => {
           const method = value.method.split('.');
@@ -316,7 +309,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         await this.transactionEntityRepository.save(transactionEntity);
       });
     } catch (error) {
-      console.log(`error: ${error}`);
+      this.logger.error(error);
       process.exit(1);
     }
   }
