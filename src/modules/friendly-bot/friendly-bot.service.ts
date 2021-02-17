@@ -8,5 +8,5 @@ import {FriendlyBotServiceInterface} from './friendly-bot.interface';
 export class FriendlyBotService implements FriendlyBotServiceInterface {
   public constructor(private readonly configService: ConfigService) {}
 
-  public issueToken(destination: string): Promise<any> {}
+ // public issueToken(destination: string): Promise<any> {}
 }
