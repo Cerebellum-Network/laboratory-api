@@ -1,6 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import {Column, Entity, PrimaryGeneratedColumn} from 'typeorm';
+import {Column, Entity, PrimaryGeneratedColumn, ManyToOne} from 'typeorm';
+import {BlockEntity} from "./block.entity";
 
+;
 @Entity('transactions')
 export class TransactionEntity {
   @PrimaryGeneratedColumn()
@@ -32,4 +34,10 @@ export class TransactionEntity {
 
   @Column({nullable: true})
   public args: string;
+
+  @Column()
+  public timestamp: Date;
+  
+  @ManyToOne(() => BlockEntity, blocks => blocks.blockNumber)
+  public block: BlockEntity;
 }
