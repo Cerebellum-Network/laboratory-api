@@ -18,6 +18,6 @@ export class TransactionDto {
   public args: string;
 
   public method: string;
-  
+
   public timestamp: Date;
 }

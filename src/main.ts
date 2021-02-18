@@ -21,9 +21,9 @@ async function bootstrap() {
   const maxLimit = Number(configService.get('REQUEST_PER_IP_PER_DAY'));
   app.use(
     rateLimit({
-      windowMs: 24 * 60 * 60 * 1000, // 15 minutes
-      max: maxLimit, // limit each IP to 100 requests per windowMs
-    }), 
+      windowMs: 24 * 60 * 60 * 1000,
+      max: maxLimit,
+    }),
   );
 
   // app.set('trust proxy', 1);
@@ -37,8 +37,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup(`${servicePrefix}/swagger`, app, document);
 
-  const blockScannerService = app.select(BlockScannerModule).get(BlockScannerService);
-  blockScannerService.startScanning();
+  // const blockScannerService = app.select(BlockScannerModule).get(BlockScannerService);
+  // blockScannerService.startScanning();
 
   app.setGlobalPrefix(servicePrefix);
   app.useGlobalPipes(new ValidationPipe({transform: true}));

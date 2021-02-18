@@ -7,8 +7,10 @@ import {ApiPromise, Keyring, WsProvider} from '@polkadot/api';
 import {KeypairType} from '@polkadot/util-crypto/types';
 import {KeyringPair} from '@polkadot/keyring/types';
 import moment from 'moment';
-import {BotEntity} from './entities/bot.entity';
+import {PayoutEntity} from './entities/payout.entity';
 import {AssetDto} from './dto/assets.dto';
+import {BalanceDto} from './dto/balance.dto';
+import {Hash} from '@polkadot/types/interfaces';
 
 @Injectable()
 export class FriendlyBotService implements FriendlyBotServiceInterface {
@@ -22,8 +24,8 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
 
   public constructor(
     private readonly configService: ConfigService,
-    @InjectRepository(BotEntity)
-    private readonly botEntityRepository: Repository<BotEntity>,
+    @InjectRepository(PayoutEntity)
+    private readonly botEntityRepository: Repository<PayoutEntity>,
   ) {
     this.init();
   }
@@ -42,13 +44,14 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     this.appKeyring = keyring.addFromJson(JSON.parse(appWalletJson));
     this.appKeyring.decodePkcs8(appPassphrase);
     this.logger.log(`Faucet account: ${this.appKeyring.address}`);
+
     return this.api;
   }
 
-  public async issueToken(destination: string): Promise<any> {
+  public async issueToken(destination: string): Promise<AssetDto> {
     // formatBalance(balance, {decimals: Number(decimal)});
-    const {balance, decimal} = await this.getBalance(destination);
-    const initialBal = balance / 10 ** 15;
+    const {balance} = await this.getBalance(destination);
+    const initialBal = +balance / 10 ** 15;
     this.logger.log(`Initial Balance: ${initialBal}`);
     const value = await this.configService.get('NUMBER_OF_TOKENS_TO_SEND');
     const maxBalance = Number(this.configService.get('MAX_BALANCE'));
@@ -65,32 +68,36 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     if (maxRequestPerDay < count) {
       throw new Error(`We exceed our daily limit. Kindly try tomorrow`);
     }
-    const hash = await this.transfer(destination, value);
-    const botEntity = new BotEntity();
+    const hash = (await this.transfer(destination, value)).toString();
+    const botEntity = new PayoutEntity();
     botEntity.destination = destination;
     botEntity.sender = this.appKeyring.address;
     botEntity.txnHash = hash;
     botEntity.value = value;
     await this.botEntityRepository.save(botEntity);
-    const assetDto = new AssetDto();
-    assetDto.transactionHash = hash;
-    return assetDto;
+
+    return new AssetDto(hash);
   }
 
-  private async getBalance(address: string): Promise<any> {
+  private async getBalance(address: string): Promise<BalanceDto> {
+    this.logger.debug(`About to get balance for: ${address}`);
+
     const {
       data: {free: balance},
     } = await this.api.query.system.account(address);
     const decimal = await this.api.registry.chainDecimals;
-    return {
+
+    return new BalanceDto(
       balance,
       decimal,
-    };
+    );
   }
 
-  private async transfer(address: string, value: string): Promise<any> {
+  private async transfer(address: string, value: string): Promise<Hash> {
+    this.logger.debug(`About to transfer assets to ${address}`);
+
     const {nonce} = await this.api.query.system.account(this.appKeyring.address);
-    const hash = await this.api.tx.balances.transfer(address, value).signAndSend(this.appKeyring, {nonce});
-    return hash;
+
+    return this.api.tx.balances.transfer(address, value).signAndSend(this.appKeyring, {nonce});
   }
 }
