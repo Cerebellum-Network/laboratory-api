@@ -14,6 +14,15 @@ async function bootstrap() {
 
   app.enableCors();
 
+  // app.use(
+  //   rateLimit({
+  //     windowMs: 24 * 60 * 60 * 1000, // 15 minutes
+  //     max: 100, // limit each IP to 100 requests per windowMs
+  //   }),
+  // );
+
+  // app.set('trust proxy', 1);
+
   const configService = app.select(ConfigModule).get(ConfigService);
   const crashlyticService: CrashlyticService = app.select(CrashlyticModule).get(CrashlyticService);
   crashlyticService.init(configService.getCrashlyticKey(), configService.getEnv());
@@ -28,17 +37,10 @@ async function bootstrap() {
   SwaggerModule.setup(`${servicePrefix}/swagger`, app, document);
 
   const blockScannerService = app.select(BlockScannerModule).get(BlockScannerService);
-  // blockScannerService.startScanning();
+  blockScannerService.startScanning();
 
   app.setGlobalPrefix(servicePrefix);
   app.useGlobalPipes(new ValidationPipe({transform: true}));
-
-  // app.use(
-  //   rateLimit({
-  //     windowMs: 15 * 60 * 1000, // 15 minutes
-  //     max: 100, // limit each IP to 100 requests per windowMs
-  //   }),
-  // );
 
   await app.listen(configService.get('PORT') || 1111);
 }
