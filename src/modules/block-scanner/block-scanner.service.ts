@@ -120,7 +120,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       blockEntity.extrinsicRoot = blockData.extrinsicsRoot.toString();
       await this.blockEntityRepository.save(blockEntity);
 
-      await this.processExtrinsics(blockData.extrinsics, blockData.number);
+      await this.processExtrinsics(blockData.extrinsics, blockEntity);
     } catch (error) {
       this.logger.error(error);
     }
@@ -279,7 +279,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     };
   }
 
-  private processExtrinsics(extrinsic: any, blockNum: any): any {
+  private processExtrinsics(extrinsic: any, block: any): any {
     try {
       const events = [];
       const transferMethods = ['balances.transfer', 'balances.transferKeepAlive', 'contracts.instantiate', 'contracts.putCode', 'contracts.call'];
@@ -288,7 +288,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
           txn.events.forEach((value) => {
             const method = value.method.split('.');
             const eventData = {
-              id: `${blockNum}-${index}`,
+              id: `${block.blockNumber}-${index}`,
               module: method[0],
               method: method[1],
             };
@@ -305,9 +305,11 @@ export class BlockScannerService implements BlockScannerServiceInterface {
           transactionEntity.senderId = txn.signature?.signer.toString();
           transactionEntity.args = txn.args?.toString();
           transactionEntity.method = txn.method;
+          transactionEntity.timestamp = block.timestamp;
+          transactionEntity.block = block;
           await this.transactionEntityRepository.save(transactionEntity);
         } else {
-          this.logger.log(`No Transaction for block: ${blockNum}\n\n`);
+          this.logger.log(`No Transaction for block: ${block.blockNumber}\n\n`);
         }
       });
     } catch (error) {
