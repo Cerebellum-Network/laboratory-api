@@ -14,6 +14,8 @@ import {BlockHash} from '@polkadot/types/interfaces/chain';
 import {GenericCall} from '@polkadot/types/generic';
 import {Codec, Registry} from '@polkadot/types/types';
 import {toTransactionDto} from './mapper/transaction.mapper';
+import {TransactionsDataDto} from './dto/transactions-data.dto';
+import {BlocksDataDto} from './dto/blocks-data.dto';
 
 export interface ISanitizedEvent {
   method: string;
@@ -65,7 +67,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     this.api = await ApiPromise.create({provider: wsProvider});
     await this.api.isReady;
     const chain = await this.api.rpc.system.chain();
-    this.logger.log(`Connected to ${chain}`)
+    this.logger.log(`Connected to ${chain}`);
+
     return this.api;
   }
 
@@ -123,7 +126,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     }
   }
 
-  public async getAccountTransactions(accountId: string, offset: number, limit: number): Promise<any> {
+  public async getAccountBlocks(accountId: string, offset: number, limit: number): Promise<BlocksDataDto> {
     this.logger.debug('About to fetch the Block');
 
     const [result, count] = await this.blockEntityRepository.findAndCount({
@@ -135,13 +138,10 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     this.logger.debug(result);
     const data = await result.map((block) => toBlockDto(block));
 
-    return {
-      data,
-      count,
-    };
+    return new BlocksDataDto(data, count);
   }
 
-  public async getTransactions(accountId: string, offset: number, limit: number): Promise<any> {
+  public async getTransactions(accountId: string, offset: number, limit: number): Promise<TransactionsDataDto> {
     this.logger.debug('About to fetch the transaction');
 
     const [result, count] = await this.transactionEntityRepository.findAndCount({
@@ -149,13 +149,9 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       take: limit,
       skip: offset,
     });
-    this.logger.debug(result);
     const data = await result.map((transaction) => toTransactionDto(transaction));
 
-    return {
-      data,
-      count,
-    };
+    return new TransactionsDataDto(data, count);
   }
 
   private async fetchBlock(hash: BlockHash): Promise<any> {
