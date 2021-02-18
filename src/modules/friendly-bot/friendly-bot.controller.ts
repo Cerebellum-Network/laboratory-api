@@ -1,5 +1,5 @@
 import {ApiInternalServerErrorResponse, ApiGatewayTimeoutResponse, ApiTags} from '@nestjs/swagger';
-import {Controller, Request, Inject, Post} from '@nestjs/common';
+import {Controller, Inject, Post, Body} from '@nestjs/common';
 import {ServiceResponse} from '@cere/ms-core';
 import {FriendlyBotService} from './friendly-bot.service';
 
@@ -14,7 +14,8 @@ export class FriendlyBotController {
   ) {}
 
   @Post('/asset')
-  public asset(@Request() request): any {
-    return 'Hello World';
+  public async asset(@Body('destination') destination: string ): Promise<any> {
+    const result = await this.friendlyBotService.issueToken(destination);
+    return result;
   }
 }

@@ -1,7 +1,7 @@
 import {Column, CreateDateColumn, Entity, PrimaryGeneratedColumn} from 'typeorm';
 
 @Entity('bots')
-export class BlockEntity {
+export class BotEntity {
   @PrimaryGeneratedColumn()
   public id: number;
 
@@ -20,6 +20,6 @@ export class BlockEntity {
   @CreateDateColumn()
   public createdAt: Date;
 
-  @Column({type: "inet"})
+  @Column({type: "inet", nullable: true})
   public ip
 }

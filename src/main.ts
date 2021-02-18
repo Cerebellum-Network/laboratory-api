@@ -2,7 +2,7 @@ import {AppModule} from './app.module';
 import {CereApplication, ConfigModule, ConfigService, CrashlyticModule, CrashlyticService} from '@cere/ms-core';
 import {ValidationPipe} from '@nestjs/common';
 import {DocumentBuilder, SwaggerModule} from '@nestjs/swagger';
-
+import * as rateLimit from 'express-rate-limit';
 import {version} from '../package.json';
 import {BlockScannerModule} from './modules/block-scanner/block-scanner.module';
 import {BlockScannerService} from './modules/block-scanner/block-scanner.service';
@@ -28,10 +28,17 @@ async function bootstrap() {
   SwaggerModule.setup(`${servicePrefix}/swagger`, app, document);
 
   const blockScannerService = app.select(BlockScannerModule).get(BlockScannerService);
-  blockScannerService.startScanning();
+  // blockScannerService.startScanning();
 
   app.setGlobalPrefix(servicePrefix);
   app.useGlobalPipes(new ValidationPipe({transform: true}));
+
+  // app.use(
+  //   rateLimit({
+  //     windowMs: 15 * 60 * 1000, // 15 minutes
+  //     max: 100, // limit each IP to 100 requests per windowMs
+  //   }),
+  // );
 
   await app.listen(configService.get('PORT') || 1111);
 }
