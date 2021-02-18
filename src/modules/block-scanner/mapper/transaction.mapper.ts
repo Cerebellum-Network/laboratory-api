@@ -2,7 +2,7 @@ import {TransactionDto} from '../dto/transaction.dto';
 import {TransactionEntity} from '../entities/transaction.entity';
 
 export const toTransactionDto = (data: TransactionEntity): TransactionDto => {
-  const {transactionHash, senderId, signature, transactionIndex, success, nonce, events, args, method} = data;
+  const {transactionHash, senderId, signature, transactionIndex, success, nonce, events, args, method, timestamp} = data;
 
   return {
     transactionHash,
@@ -14,5 +14,6 @@ export const toTransactionDto = (data: TransactionEntity): TransactionDto => {
     events,
     args,
     method,
+    timestamp
   };
 };
