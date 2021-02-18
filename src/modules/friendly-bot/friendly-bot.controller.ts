@@ -1,9 +1,8 @@
 import {ApiInternalServerErrorResponse, ApiGatewayTimeoutResponse, ApiTags} from '@nestjs/swagger';
-import {Controller, Inject, Post, Body, Res, HttpStatus} from '@nestjs/common';
+import {Controller, Inject, Post, Body} from '@nestjs/common';
 import {ServiceResponse} from '@cere/ms-core';
 import {FriendlyBotService} from './friendly-bot.service';
 import {AssetDto} from './dto/assets.dto';
-import {response} from 'express';
 
 @Controller()
 @ApiInternalServerErrorResponse({description: 'Internal server error.', type: ServiceResponse})
