@@ -1,6 +1,6 @@
-import {Connection, Repository} from 'typeorm';
+import {Repository} from 'typeorm';
 import {Injectable, Logger} from '@nestjs/common';
-import {InjectConnection, InjectRepository} from '@nestjs/typeorm';
+import {InjectRepository} from '@nestjs/typeorm';
 import {ConfigService} from '@cere/ms-core';
 import {FriendlyBotServiceInterface} from './friendly-bot.interface';
 import {ApiPromise, Keyring, WsProvider} from '@polkadot/api';
@@ -8,6 +8,7 @@ import {KeypairType} from '@polkadot/util-crypto/types';
 import {KeyringPair} from '@polkadot/keyring/types';
 import moment from 'moment';
 import {BotEntity} from './entities/bot.entity';
+import {AssetDto} from './dto/assets.dto';
 
 @Injectable()
 export class FriendlyBotService implements FriendlyBotServiceInterface {
@@ -51,15 +52,18 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     this.logger.log(`Initial Balance: ${initialBal}`);
     const value = await this.configService.get('NUMBER_OF_TOKENS_TO_SEND');
     const maxBalance = Number(this.configService.get('MAX_BALANCE'));
-    const maxRequestPerDay = Number(await this.configService.get('REQUEST_PER_DAY'))
+    const maxRequestPerDay = Number(await this.configService.get('REQUEST_PER_DAY'));
     if (initialBal >= maxBalance) {
-      return `Your balance is ${initialBal}`;
+      throw new Error(`Your balance is ${initialBal}, So we couldn't process your request.`);
     }
 
-    const time =  moment(new Date()).format("DD-MM-YYYY")
-    const count = await this.botEntityRepository.createQueryBuilder('bots').where("DATE(bots.createdAt) = :date", {date: time}).getCount();
+    const time = moment(new Date()).format('DD-MM-YYYY');
+    const count = await this.botEntityRepository
+      .createQueryBuilder('bots')
+      .where('DATE(bots.createdAt) = :date', {date: time})
+      .getCount();
     if (maxRequestPerDay < count) {
-      return `Your limit exceeds`;
+      throw new Error(`We exceed our daily limit. Kindly try tomorrow`);
     }
     const hash = await this.transfer(destination, value);
     const botEntity = new BotEntity();
@@ -68,7 +72,9 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     botEntity.txnHash = hash;
     botEntity.value = value;
     await this.botEntityRepository.save(botEntity);
-    return hash;
+    const assetDto = new AssetDto();
+    assetDto.transactionHash = hash;
+    return assetDto;
   }
 
   private async getBalance(address: string): Promise<any> {
@@ -84,8 +90,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
 
   private async transfer(address: string, value: string): Promise<any> {
     const {nonce} = await this.api.query.system.account(this.appKeyring.address);
-    
     const hash = await this.api.tx.balances.transfer(address, value).signAndSend(this.appKeyring, {nonce});
-    return hash.toHex();
+    return hash;
   }
 }
