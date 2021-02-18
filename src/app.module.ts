@@ -9,9 +9,9 @@ import {
   DatabaseModule,
 } from '@cere/ms-core';
 import {BlockScannerModule} from './modules/block-scanner/block-scanner.module';
-
+import {FriendlyBotModule} from './modules/friendly-bot/friendly-bot.module';
 @Module({
-  imports: [BlockScannerModule, ConfigModule, BuildModule, CrashlyticModule, TracingModule.TracingModule, LoggerModule, DatabaseModule],
+  imports: [BlockScannerModule, FriendlyBotModule, ConfigModule, BuildModule, CrashlyticModule, TracingModule.TracingModule, LoggerModule, DatabaseModule],
   controllers: [HealthCheckController],
   providers: [],
 })
