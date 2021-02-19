@@ -3,8 +3,8 @@ import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import {BlockEntity} from './entities/block.entity';
 import {TransactionEntity} from './entities/transaction.entity';
-import {Connection, Repository} from 'typeorm';
-import {InjectConnection, InjectRepository} from '@nestjs/typeorm';
+import {Repository} from 'typeorm';
+import {InjectRepository} from '@nestjs/typeorm';
 import {ConfigService} from '@cere/ms-core';
 import {toBlockDto} from './mapper/position.mapper';
 import {GenericEventData, Struct} from '@polkadot/types';
@@ -48,8 +48,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     private readonly blockEntityRepository: Repository<BlockEntity>,
     @InjectRepository(TransactionEntity)
     private readonly transactionEntityRepository: Repository<TransactionEntity>,
-    @InjectConnection()
-    private readonly connection: Connection,
     private readonly configService: ConfigService,
   ) {}
 
