@@ -37,8 +37,8 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup(`${servicePrefix}/swagger`, app, document);
 
-  // const blockScannerService = app.select(BlockScannerModule).get(BlockScannerService);
-  // blockScannerService.startScanning();
+  const blockScannerService = app.select(BlockScannerModule).get(BlockScannerService);
+  blockScannerService.startScanning();
 
   app.setGlobalPrefix(servicePrefix);
   app.useGlobalPipes(new ValidationPipe({transform: true}));
