@@ -28,7 +28,7 @@ services:
       - JAEGER_SAMPLER_TYPE=const
       - JAEGER_SAMPLER_PARAM=1
       - LOG_LEVEL=debug
-      - NETWORK_WS_URL=wss://testnet-node-0.cere.network:9945
+      - NETWORK_WS_URL=wss://testnet-node-1.cere.network:9945
     depends_on:
       - cere-block-scanner-db
 

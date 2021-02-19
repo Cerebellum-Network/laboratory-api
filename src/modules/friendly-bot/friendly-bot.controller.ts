@@ -20,14 +20,14 @@ export class FriendlyBotController {
   ) {}
 
   @RateLimit({
-    keyPrefix: 'asset',
+    keyPrefix: 'request-assets',
     points: 3,
     duration: 86400,
     customResponseSchema: () => {
       return {message: `Test tokens can't be requested more than 3 times in a day`};
     },
   })
-  @Post('/asset')
+  @Post('/request-assets')
   public asset(@Body() postAssetRequest: PostAssetRequestDto): Promise<AssetDto> {
     return this.friendlyBotService.issueToken(postAssetRequest.destination);
   }

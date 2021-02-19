@@ -6,7 +6,7 @@ import {ServiceResponse} from '@cere/ms-core';
 import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 
-@Controller()
+@Controller('block-scanner')
 @ApiInternalServerErrorResponse({description: 'Internal server error.', type: ServiceResponse})
 @ApiGatewayTimeoutResponse({description: 'Gateway timeout exception.', type: ServiceResponse})
 @ApiTags('Block Scanner')
