@@ -2,7 +2,6 @@ import {AppModule} from './app.module';
 import {CereApplication, ConfigModule, ConfigService, CrashlyticModule, CrashlyticService} from '@cere/ms-core';
 import {ValidationPipe} from '@nestjs/common';
 import {DocumentBuilder, SwaggerModule} from '@nestjs/swagger';
-import rateLimit from 'express-rate-limit';
 import {version} from '../package.json';
 import {BlockScannerModule} from './modules/block-scanner/block-scanner.module';
 import {BlockScannerService} from './modules/block-scanner/block-scanner.service';
