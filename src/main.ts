@@ -18,16 +18,6 @@ async function bootstrap() {
 
   app.enableCors();
 
-  const maxLimit = Number(configService.get('REQUEST_PER_IP_PER_DAY'));
-  app.use(
-    rateLimit({
-      windowMs: 24 * 60 * 60 * 1000,
-      max: maxLimit,
-    }),
-  );
-
-  // app.set('trust proxy', 1);
-
   const options = new DocumentBuilder()
     .setTitle('Block Scanner Service')
     .setDescription('The Block Scanner Service API description')
