@@ -60,11 +60,14 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
       throw new Error(`Your balance is ${initialBal}, So we couldn't process your request.`);
     }
 
-    const time = moment(new Date()).format('DD-MM-YYYY');
+    const time = moment(new Date()).format('YYYY-MM-DD');
     const count = await this.botEntityRepository
       .createQueryBuilder('bots')
       .where('DATE(bots.createdAt) = :date', {date: time})
       .getCount();
+
+    this.logger.debug(`Today's requests: ${count}`);
+
     if (maxRequestPerDay < count) {
       throw new Error(`We exceed our daily limit. Kindly try tomorrow`);
     }
