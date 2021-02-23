@@ -1,113 +1,83 @@
-## Description
+# Laboratory API application
 
-Short description of the service.
+## Overview
+
+This application is supposed to be used as API for [Laboratory UI](https://github.com/Cerebellum-Network/laboratory-ui).
 
 ## Release notes
-### vNext
-* Updated shared-js version to 1.0.4
+### v1.0.0
+* Added Block Scanner API
+* Added FriendBot API
 
-## Installation
+
+# Quick start
+
+### Create or import database:
+```bash
+sudo -u postgres psql -c "create database \"laboratory-service\";"
+sudo -u postgres psql -c "create user \"laboratory-service\" with encrypted password 'laboratory-service';"
+sudo -u postgres psql -c "grant all privileges on database \"laboratory-service\" to \"laboratory-service\";"
+```
+
+### Drop tables (in case of clear)
+```bash
+sudo -u postgres psql -c "drop database \"laboratory-service\";"
+sudo -u postgres psql -c "create database \"laboratory-service\";"
+sudo -u postgres psql -c "grant all privileges on database \"laboratory-service\" to \"laboratory-service\";"
+```
+
+### Configure test environment
+```bash
+sudo -u postgres psql -c "create database \"laboratory-service-test\";"
+sudo -u postgres psql -c "create user \"laboratory-service-test\" with encrypted password 'laboratory-service-test';"
+sudo -u postgres psql -c "grant all privileges on database \"laboratory-service-test\" to \"laboratory-service-test\";"
+```
+
+## Install dependencies
 
 ```bash
-$ npm install
+$ nvm exec npm install
 ```
 
 ## Swagger
-http://localhost:2015/block-scanner/swagger/#/
+http://localhost:2015/laboratory/swagger/#/
 
 ## Running the app
 
 ```bash
 # local
-$ npm run start
+$ nvm exec npm run start
 
 # watch mode
-$ npm run start:dev
+$ nvm exec npm run start:dev
 
 # production mode
-$ npm run start:prod
+$ nvm exec npm run start:prod
 ```
 
-## Test
+## Run Tests
 
 ```bash
 # unit tests
-$ npm run test
+$ nvm exec npm run test
 
 # e2e tests
-$ npm run test:e2e
+$ nvm exec npm run test:e2e
 
 # test coverage
-$ npm run test:cov
+$ nvm exec npm run test:cov
 ```
 
-# How to start
-
-### Create or import database:
+## Packaging 
+### Run project from docker-compose:
+* Send files to the host (optional):
 ```bash
-sudo -u postgres psql -c "create database \"block-scanner-service\";"
-sudo -u postgres psql -c "create user \"block-scanner-service\" with encrypted password 'block-scanner-service';"
-sudo -u postgres psql -c "grant all privileges on database \"block-scanner-service\" to \"block-scanner-service\";"
+rsync -av -e ssh --exclude='.idea' --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='pgdata-block-scanner' ./ laboratory_api:/root/block-scanner
 ```
-
-### Drop tables (in case of clear)
-```bash
-sudo -u postgres psql -c "drop database \"block-scanner-service\";"
-sudo -u postgres psql -c "create database \"block-scanner-service\";"
-sudo -u postgres psql -c "grant all privileges on database \"block-scanner-service\" to \"block-scanner-service\";"
+* Start service
+```
+docker-compose up -d cere-block-scanner-service cere-block-scanner-db
 ```
 
-### Configure test environment
-```bash
-sudo -u postgres psql -c "create database \"block-scanner-service-test\";"
-sudo -u postgres psql -c "create user \"block-scanner-service-test\" with encrypted password 'block-scanner-service-test';"
-sudo -u postgres psql -c "grant all privileges on database \"block-scanner-service-test\" to \"block-scanner-service-test\";"
-```
-
-## Build and run docker locally
-Build image locally
-```bash
-docker build .
-```
-Find just built image
-```bash
-docker image ls
-```
-Run docker with specific env variable
-```bash
-docker run -e NODE_ENV=local -p 1111:1111 -it <IMAGE_NAME>
-```
-
-## Push docker image to the ECR:
-#### Method 1: Automated
-Run the script:
-```bash
-npm run send:build:to:ecr
-```
-
-#### Method 2: Manual
-Build container locally:
-```bash
-docker build -t 524725240689.dkr.ecr.us-west-2.amazonaws.com/crb-block-scanner-service:latest .
-```
-Push to ECR:
-```bash
-docker push 524725240689.dkr.ecr.us-west-2.amazonaws.com/crb-block-scanner-service:latest
-```
-If login expired, login (PROFILE_NAME can be taken from ~/.aws/credentials):
-```bash
-aws ecr get-login --no-include-email  --region us-west-2 --profile PROFILE_NAME
-```
-Then enter generated command from console:
-```bash
-docker login -u AWS -p PASSWORD
-```
-## Run project from docker-compose (DEV env):
-#### Send files:
-```bash
-rsync -av -e ssh --exclude='.idea' --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='pgdata-block-scanner' ./ block_scanner_api:/root/block-scanner
-```
-#### Start service
-```
-docker-compose up -d
-```
+## License 
+License info can be found in the [LICENSE section](./docs/LICENSE.md).
