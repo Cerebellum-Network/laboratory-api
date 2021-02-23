@@ -5,6 +5,8 @@ import {ApiGatewayTimeoutResponse, ApiInternalServerErrorResponse, ApiTags} from
 import {ServiceResponse} from '@cere/ms-core';
 import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
+import {LatestBlockDto} from './dto/latest-block.dto';
+import {BalanceDto} from './dto/balance.dto';
 
 @Controller('block-scanner')
 @ApiInternalServerErrorResponse({description: 'Internal server error.', type: ServiceResponse})
@@ -32,5 +34,15 @@ export class BlockScannerController {
     @Param('accountId') accountId: string,
   ): Promise<TransactionsDataDto> {
     return this.blockScannerService.getTransactions(accountId, offset, limit);
+  }
+
+  @Get('latest-block')
+  public latestBlock(): Promise<LatestBlockDto> {
+    return this.blockScannerService.getLatestBlock();
+  }
+
+  @Get('balance/:address')
+  public balance(@Param('address') address: string): Promise<BalanceDto> {
+    return this.blockScannerService.getBalance(address);
   }
 }
