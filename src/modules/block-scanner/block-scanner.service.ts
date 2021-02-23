@@ -8,7 +8,7 @@ import {InjectRepository} from '@nestjs/typeorm';
 import {ConfigService} from '@cere/ms-core';
 import {toBlockDto} from './mapper/position.mapper';
 import {GenericEventData, Struct} from '@polkadot/types';
-import {u8aToHex} from '@polkadot/util';
+import {formatBalance, u8aToHex} from '@polkadot/util';
 import {blake2AsU8a} from '@polkadot/util-crypto';
 import {BlockHash} from '@polkadot/types/interfaces/chain';
 import {GenericCall} from '@polkadot/types/generic';
@@ -16,6 +16,8 @@ import {Codec, Registry} from '@polkadot/types/types';
 import {toTransactionDto} from './mapper/transaction.mapper';
 import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
+import {LatestBlockDto} from './dto/latest-block.dto';
+import {BalanceDto} from './dto/balance.dto';
 
 export interface ISanitizedEvent {
   method: string;
@@ -152,6 +154,26 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     return new TransactionsDataDto(data, count);
   }
 
+  public async getLatestBlock(): Promise<LatestBlockDto> {
+    this.logger.debug(`About to get latest block`);
+    const query = this.blockEntityRepository
+      .createQueryBuilder('blocks')
+      .select('MAX(CAST( blocks.blockNumber AS INT))', 'blockNumber');
+    const syncedBlock = await query.getRawOne();
+    return new LatestBlockDto(syncedBlock.blockNumber);
+  }
+
+  public async getBalance(address: string): Promise<any> {
+    this.logger.debug(`About to get balance for: ${address}`);
+    const {
+      data: {free: balance},
+    } = await this.api.query.system.account(address);
+    // FIXME: Fix the decimal position once it is fixed in chain
+   // const decimal = await this.api.registry.chainDecimals;
+    const result = await formatBalance(balance, {decimals: 15});
+    return new BalanceDto(result);
+  }
+
   private async fetchBlock(hash: BlockHash): Promise<any> {
     const [{block}, events] = await Promise.all([
       this.api.rpc.chain.getBlock(hash),
@@ -280,7 +302,13 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   private processExtrinsics(extrinsic: any, block: any): any {
     try {
       const events = [];
-      const transferMethods = ['balances.transfer', 'balances.transferKeepAlive', 'contracts.instantiate', 'contracts.putCode', 'contracts.call'];
+      const transferMethods = [
+        'balances.transfer',
+        'balances.transferKeepAlive',
+        'contracts.instantiate',
+        'contracts.putCode',
+        'contracts.call',
+      ];
       extrinsic.forEach(async (txn, index) => {
         if (transferMethods.includes(txn.method)) {
           txn.events.forEach((value) => {
