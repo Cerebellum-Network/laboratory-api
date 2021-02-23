@@ -1,19 +1,21 @@
 import {AppModule} from './app.module';
-import {CereApplication, ConfigModule, ConfigService, CrashlyticModule, CrashlyticService} from '@cere/ms-core';
+import {ConfigModule} from './modules/config/config.module';
+import {ConfigService} from './modules/config/config.service';
 import {ValidationPipe} from '@nestjs/common';
 import {DocumentBuilder, SwaggerModule} from '@nestjs/swagger';
 import {version} from '../package.json';
 import {BlockScannerModule} from './modules/block-scanner/block-scanner.module';
 import {BlockScannerService} from './modules/block-scanner/block-scanner.service';
+import {NestFactory} from '@nestjs/core';
+import bodyParser from 'body-parser';
 
 async function bootstrap() {
   const servicePrefix = 'laboratory';
 
-  const app = await CereApplication.create(AppModule);
+  const app = await NestFactory.create(AppModule, {bodyParser: false});
+  app.use(bodyParser.json());
 
   const configService = app.select(ConfigModule).get(ConfigService);
-  const crashlyticService: CrashlyticService = app.select(CrashlyticModule).get(CrashlyticService);
-  crashlyticService.init(configService.getCrashlyticKey(), configService.getEnv());
 
   app.enableCors();
 

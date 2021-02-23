@@ -1,7 +1,5 @@
 FROM node:12.18.4
 
-ARG NPM_TOKEN
-
 WORKDIR /app
 
 COPY . .

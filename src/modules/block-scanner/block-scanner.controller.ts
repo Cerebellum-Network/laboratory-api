@@ -2,15 +2,14 @@ import {Controller, Get, Inject, Param, Query} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {BlockScannerService} from './block-scanner.service';
 import {ApiGatewayTimeoutResponse, ApiInternalServerErrorResponse, ApiTags} from '@nestjs/swagger';
-import {ServiceResponse} from '@cere/ms-core';
 import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
 import {BalanceDto} from './dto/balance.dto';
 
 @Controller('block-scanner')
-@ApiInternalServerErrorResponse({description: 'Internal server error.', type: ServiceResponse})
-@ApiGatewayTimeoutResponse({description: 'Gateway timeout exception.', type: ServiceResponse})
+@ApiInternalServerErrorResponse({description: 'Internal server error.'})
+@ApiGatewayTimeoutResponse({description: 'Gateway timeout exception.'})
 @ApiTags('Block Scanner')
 export class BlockScannerController {
   public constructor(

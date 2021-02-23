@@ -1,7 +1,7 @@
 import {ApiInternalServerErrorResponse, ApiGatewayTimeoutResponse, ApiTags} from '@nestjs/swagger';
 import {Controller, Inject, Post, Body, UseInterceptors} from '@nestjs/common';
 import {RateLimit} from 'nestjs-rate-limiter';
-import {ConfigService} from '@cere/ms-core';
+import {ConfigService} from '../config/config.service';
 import {FriendlyBotService} from './friendly-bot.service';
 import {AssetDto} from './dto/assets.dto';
 import {PostAssetRequestDto} from './dto/post-asset-request.dto';

@@ -1,4 +1,4 @@
-import {ConfigModule} from '@cere/ms-core';
+import {ConfigModule} from '../config/config.module';
 import {Test, TestingModule} from '@nestjs/testing';
 import {getRepositoryToken} from '@nestjs/typeorm';
 import {Repository} from 'typeorm';

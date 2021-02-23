@@ -14,16 +14,16 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 
 ### Create or import database:
 ```bash
-sudo -u postgres psql -c "create database \"laboratory-service\";"
-sudo -u postgres psql -c "create user \"laboratory-service\" with encrypted password 'laboratory-service';"
-sudo -u postgres psql -c "grant all privileges on database \"laboratory-service\" to \"laboratory-service\";"
+sudo -u postgres psql -c "create database \"block-scanner-service\";"
+sudo -u postgres psql -c "create user \"block-scanner-service\" with encrypted password 'block-scanner-service';"
+sudo -u postgres psql -c "grant all privileges on database \"block-scanner-service\" to \"block-scanner-service\";"
 ```
 
 ### Drop tables (in case of clear)
 ```bash
-sudo -u postgres psql -c "drop database \"laboratory-service\";"
-sudo -u postgres psql -c "create database \"laboratory-service\";"
-sudo -u postgres psql -c "grant all privileges on database \"laboratory-service\" to \"laboratory-service\";"
+sudo -u postgres psql -c "drop database \"block-scanner-service\";"
+sudo -u postgres psql -c "create database \"block-scanner-service\";"
+sudo -u postgres psql -c "grant all privileges on database \"block-scanner-service\" to \"block-scanner-service\";"
 ```
 
 ### Configure test environment
