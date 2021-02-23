@@ -38,8 +38,7 @@ export class BlockScannerController {
 
   @Get('latest-block')
   public latestBlock(): Promise<LatestBlockDto> {
-    const result = this.blockScannerService.getLatestBlock();
-    return result;
+    return this.blockScannerService.getLatestBlock();
   }
 
   @Get('balance/:address')
