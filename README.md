@@ -8,7 +8,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### v1.0.0
 * Added Block Scanner API
 * Added FriendBot API
-
+### v1.1.0
+* Added API for User Balance
+* Added API for Synced block
 
 # Quick start
 
