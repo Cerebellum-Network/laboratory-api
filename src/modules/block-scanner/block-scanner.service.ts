@@ -143,7 +143,11 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public async getTransactions(accountId: string, offset: number, limit: number): Promise<TransactionsDataDto> {
     this.logger.debug('About to fetch the transaction');
-
+    const balance = await this.getBalance(accountId);
+    const query = this.blockEntityRepository
+    .createQueryBuilder('blocks')
+    .select('MAX(CAST( blocks.blockNumber AS INT))', 'blockNumber');
+  const {blockNumber} = await query.getRawOne();
     const [result, count] = await this.transactionEntityRepository.findAndCount({
       where: {senderId: accountId},
       take: limit,
@@ -151,7 +155,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     });
     const data = await result.map((transaction) => toTransactionDto(transaction));
 
-    return new TransactionsDataDto(data, count);
+    return new TransactionsDataDto(data, count, balance, blockNumber);
   }
 
   public async getLatestBlock(): Promise<LatestBlockDto> {
@@ -171,7 +175,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     // FIXME: Fix the decimal position once it is fixed in chain
    // const decimal = await this.api.registry.chainDecimals;
     const result = await formatBalance(balance, {decimals: 15});
-    return new BalanceDto(result);
+    return result;
   }
 
   private async fetchBlock(hash: BlockHash): Promise<any> {
