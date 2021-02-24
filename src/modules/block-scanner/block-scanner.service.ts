@@ -144,10 +144,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public async getTransactions(accountId: string, offset: number, limit: number): Promise<TransactionsDataDto> {
     this.logger.debug('About to fetch the transaction');
     const balance = await this.getBalance(accountId);
-    const query = this.blockEntityRepository
-    .createQueryBuilder('blocks')
-    .select('MAX(CAST( blocks.blockNumber AS INT))', 'blockNumber');
-  const {blockNumber} = await query.getRawOne();
     const [result, count] = await this.transactionEntityRepository.findAndCount({
       where: {senderId: accountId},
       take: limit,
@@ -155,7 +151,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     });
     const data = await result.map((transaction) => toTransactionDto(transaction));
 
-    return new TransactionsDataDto(data, count, balance, blockNumber);
+    return new TransactionsDataDto(data, count, balance);
   }
 
   public async getLatestBlock(): Promise<LatestBlockDto> {
