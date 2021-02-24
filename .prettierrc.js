@@ -1,5 +1,8 @@
-const base = require('./node_modules/@cere/shared/.prettierrc.base');
-
 module.exports = {
-  ...base,
+  semi: true,
+  trailingComma: "all",
+  singleQuote: true,
+  printWidth: 120,
+  tabWidth: 2,
+  bracketSpacing: false,
 };

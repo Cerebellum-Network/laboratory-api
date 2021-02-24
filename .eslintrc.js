@@ -1,5 +1,35 @@
-const base = require('./node_modules/@cere/shared/.eslintrc.base');
-
 module.exports = {
-  ...base,
+  parser: '@typescript-eslint/parser',
+  extends: [
+    'airbnb-base',
+    'plugin:import/typescript',
+    'plugin:@typescript-eslint/recommended',
+    'prettier',
+    'prettier/@typescript-eslint',
+  ],
+  root: true,
+  env: {
+    node: true,
+    jest: true,
+  },
+  rules: {
+    'import/no-extraneous-dependencies': [
+      'error',
+      {devDependencies: ['**/*spec.ts', 'test/*.*']},
+    ],
+    'no-useless-constructor': 'off',
+    '@typescript-eslint/no-useless-constructor': 'error',
+    'object-curly-spacing': ['error', 'never'],
+    'import/extensions': ['error', 'never'],
+    'import/order': 'off',
+    'no-use-before-define': ['error', { 'functions': false }],
+    '@typescript-eslint/no-inferrable-types': ['off'],
+    'import/prefer-default-export': 'off',
+    'no-await-in-loop': 'off',
+    'no-shadow': 'off',
+    'no-restricted-syntax': ['error', 'ForInStatement', 'LabeledStatement', 'WithStatement'],
+    'class-methods-use-this': 'off',
+    'require-await': ['error'],
+    "@typescript-eslint/explicit-member-accessibility": ["error"],
+  },
 };
