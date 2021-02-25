@@ -5,12 +5,21 @@
 This application is supposed to be used as API for [Laboratory UI](https://github.com/Cerebellum-Network/laboratory-ui).
 
 ## Release notes
-### v1.0.0
-* Added Block Scanner API
-* Added FriendBot API
+### vNext
+* 
+
+### v1.1.1
+* Updated license
+* Updated axios version
+* Fixed Rate Limit issue
+
 ### v1.1.0
 * Added API for User Balance
 * Added API for Synced block
+
+### v1.0.0
+* Added Block Scanner API
+* Added FriendBot API
 
 # Quick start
 
@@ -82,4 +91,4 @@ docker-compose up -d cere-block-scanner-service cere-block-scanner-db
 ```
 
 ## License 
-License info can be found in the [LICENSE section](./docs/LICENSE.md).
+License info can be found in the [LICENSE section](./LICENSE.md).

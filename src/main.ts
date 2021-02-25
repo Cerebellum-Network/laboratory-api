@@ -8,12 +8,15 @@ import {BlockScannerModule} from './modules/block-scanner/block-scanner.module';
 import {BlockScannerService} from './modules/block-scanner/block-scanner.service';
 import {NestFactory} from '@nestjs/core';
 import bodyParser from 'body-parser';
+import {NestExpressApplication} from '@nestjs/platform-express';
 
 async function bootstrap() {
   const servicePrefix = 'laboratory';
 
-  const app = await NestFactory.create(AppModule, {bodyParser: false});
+  const app = await NestFactory.create<NestExpressApplication>(AppModule, {bodyParser: false});
   app.use(bodyParser.json());
+
+  app.set('trust proxy', 1);
 
   const configService = app.select(ConfigModule).get(ConfigService);
 
