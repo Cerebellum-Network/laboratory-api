@@ -8,6 +8,7 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### vNext
 * Updated license
 * Updated axios version
+* Fixed Rate Limit issue
 
 ### v1.1.0
 * Added API for User Balance
