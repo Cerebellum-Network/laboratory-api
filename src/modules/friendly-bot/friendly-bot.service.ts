@@ -1,5 +1,5 @@
 import {Repository} from 'typeorm';
-import {Injectable, Logger} from '@nestjs/common';
+import {BadRequestException, Injectable, Logger} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
 import {ConfigService} from '../config/config.service';
 import {FriendlyBotServiceInterface} from './friendly-bot.interface';
@@ -57,7 +57,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     const maxBalance = Number(this.configService.get('MAX_BALANCE'));
     const maxRequestPerDay = Number(await this.configService.get('REQUEST_PER_DAY'));
     if (initialBal >= maxBalance) {
-      throw new Error(`Your balance is ${initialBal}, So we couldn't process your request.`);
+      throw new BadRequestException(`Your balance is ${initialBal}, So we couldn't process your request.`);
     }
 
     const time = moment(new Date()).format('YYYY-MM-DD');
@@ -69,7 +69,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     this.logger.debug(`Today's requests: ${count}`);
 
     if (maxRequestPerDay < count) {
-      throw new Error(`We exceed our daily limit. Kindly try tomorrow`);
+      throw new BadRequestException(`We exceed our daily limit: ${maxRequestPerDay}. Kindly try tomorrow`);
     }
     const hash = (await this.transfer(destination, value)).toString();
     const botEntity = new PayoutEntity();
