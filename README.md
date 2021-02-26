@@ -8,6 +8,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### vNext
 * 
 
+### v1.1.2
+* Update error message
+
 ### v1.1.1
 * Updated license
 * Updated axios version
