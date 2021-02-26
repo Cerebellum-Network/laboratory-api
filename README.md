@@ -6,6 +6,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 
 ## Release notes
 ### vNext
+* 
+
+### v1.1.2
 * Update error message
 
 ### v1.1.1
