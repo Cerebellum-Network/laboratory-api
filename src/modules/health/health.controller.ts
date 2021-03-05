@@ -31,7 +31,7 @@ export class HealthController {
   @Get('finalization')
   public async finalization(@Res() res: Response): Promise<any>{
     const diff = await this.healthService.finalization();
-    if (diff > 10) {
+    if (diff) {
      res.status(HttpStatus.NOT_FOUND).send();
     }
      res.status(HttpStatus.NO_CONTENT).send();
