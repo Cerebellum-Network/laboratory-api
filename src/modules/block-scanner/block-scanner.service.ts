@@ -17,7 +17,6 @@ import {toTransactionDto} from './mapper/transaction.mapper';
 import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
-import {BlockStatusDto} from './dto/block-status.dto';
 
 export interface ISanitizedEvent {
   method: string;
@@ -172,22 +171,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     // const decimal = await this.api.registry.chainDecimals;
     const result = await formatBalance(balance, {decimals: 15});
     return result;
-  }
-
-  public async healthCheck(): Promise<any> {
-    this.logger.debug(`About to fetch system health`);
-    const result = await this.api.rpc.system.health();
-    return result;
-  }
-
-  public async blockStatus(): Promise<BlockStatusDto> {
-    this.logger.debug(`About to fetch block status`);
-    const finalized = Number(await this.api.derive.chain.bestNumberFinalized());
-    const best = Number(await this.api.derive.chain.bestNumber());
-    if (best - finalized > 10) {
-      return new BlockStatusDto(true, finalized, best);
-    }
-    return new BlockStatusDto(false, finalized, best);
   }
 
   private async fetchBlock(hash: BlockHash): Promise<any> {
