@@ -6,6 +6,7 @@ import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
 import {BalanceDto} from './dto/balance.dto';
+import {BlockStatusDto} from './dto/block-status.dto';
 
 @Controller('block-scanner')
 @ApiInternalServerErrorResponse({description: 'Internal server error.'})
@@ -43,5 +44,15 @@ export class BlockScannerController {
   @Get('balance/:address')
   public balance(@Param('address') address: string): Promise<BalanceDto> {
     return this.blockScannerService.getBalance(address);
+  }
+
+  @Get('health-check')
+  public healthCheck(): Promise<any> {
+    return this.blockScannerService.healthCheck();
+  }
+
+  @Get('block-status')
+  public blockStatus(): Promise<BlockStatusDto> {
+    return this.blockScannerService.blockStatus();
   }
 }
