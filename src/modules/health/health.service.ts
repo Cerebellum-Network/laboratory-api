@@ -35,29 +35,25 @@ export class HealthService {
 
   public async blockStatus(): Promise<BlockStatusDto> {
     this.logger.debug(`About to fetch block status`);
-    const {best, finalized
-  } = await this.blockNumber();
+    const {best, finalized} = await this.blockNumber();
     if (best - finalized > this.blockDifference) {
       return new BlockStatusDto(true, finalized, best);
     }
     return new BlockStatusDto(false, finalized, best);
   }
 
-  public async finalization(): Promise<any>{
+  public async finalization(): Promise<boolean> {
     this.logger.debug(`About to fetch block status`);
-    const {best, finalized
-    } = await this.blockNumber();
+    const {best, finalized} = await this.blockNumber();
     if (best - finalized > this.blockDifference) {
       return true;
     }
     return false;
   }
 
-
-  private async blockNumber(): Promise<any>{
+  private async blockNumber(): Promise<any> {
     const finalized = Number(await this.api.derive.chain.bestNumberFinalized());
     const best = Number(await this.api.derive.chain.bestNumber());
-    return {finalized, best}
+    return {finalized, best};
   }
-
 }

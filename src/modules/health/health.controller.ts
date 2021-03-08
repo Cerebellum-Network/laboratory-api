@@ -29,11 +29,11 @@ export class HealthController {
   }
 
   @Get('finalization')
-  public async finalization(@Res() res: Response): Promise<any>{
+  public async finalization(@Res() res: Response): Promise<any> {
     const diff = await this.healthService.finalization();
     if (diff) {
-     res.status(HttpStatus.NOT_FOUND).send();
+      res.status(HttpStatus.NOT_FOUND).send();
     }
-     res.status(HttpStatus.NO_CONTENT).send();
+    res.status(HttpStatus.NO_CONTENT).send();
   }
 }
