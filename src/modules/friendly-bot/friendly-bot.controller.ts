@@ -30,9 +30,7 @@ export class FriendlyBotController {
     },
   })
   @Post('/request-assets')
-  public asset(@Body() postAssetRequest: PostAssetRequestDto, @Request() request): Promise<AssetDto> {
-    this.logger.debug(`IP of the client: ${request.ip}`);
-
-    return this.friendlyBotService.issueToken(postAssetRequest.destination);
+  public asset(@Body() postAssetRequest: PostAssetRequestDto): Promise<AssetDto> {
+    return this.friendlyBotService.issueToken(postAssetRequest.destination, postAssetRequest.network);
   }
 }

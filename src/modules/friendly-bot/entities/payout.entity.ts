@@ -1,5 +1,10 @@
 import {Column, CreateDateColumn, Entity, PrimaryGeneratedColumn} from 'typeorm';
 
+export enum NetworkEnum {
+  TESTNET = '0',
+  DEV = '1',
+  DEV1 = '2',
+}
 @Entity('payouts')
 export class PayoutEntity {
   @PrimaryGeneratedColumn()
@@ -16,6 +21,12 @@ export class PayoutEntity {
 
   @Column()
   public destination: string;
+
+  @Column({
+    type: 'enum',
+    enum: NetworkEnum
+  })
+  public network: NetworkEnum;
 
   @CreateDateColumn()
   public createdAt: Date;
