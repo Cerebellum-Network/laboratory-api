@@ -17,7 +17,6 @@ import {toTransactionDto} from './mapper/transaction.mapper';
 import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
-import {BalanceDto} from './dto/balance.dto';
 
 export interface ISanitizedEvent {
   method: string;
@@ -169,7 +168,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       data: {free: balance},
     } = await this.api.query.system.account(address);
     // FIXME: Fix the decimal position once it is fixed in chain
-   // const decimal = await this.api.registry.chainDecimals;
+    // const decimal = await this.api.registry.chainDecimals;
     const result = await formatBalance(balance, {decimals: 15});
     return result;
   }

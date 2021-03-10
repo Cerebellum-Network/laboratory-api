@@ -1,5 +1,5 @@
 import {ApiInternalServerErrorResponse, ApiGatewayTimeoutResponse, ApiTags} from '@nestjs/swagger';
-import {Controller, Inject, Post, Body, UseInterceptors, Request, Logger} from '@nestjs/common';
+import {Controller, Inject, Post, Body, Request, Logger} from '@nestjs/common';
 import {RateLimit} from 'nestjs-rate-limiter';
 import {ConfigService} from '../config/config.service';
 import {FriendlyBotService} from './friendly-bot.service';
