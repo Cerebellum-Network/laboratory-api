@@ -2,6 +2,7 @@ import {Injectable, Logger} from '@nestjs/common';
 import {ConfigService} from '../config/config.service';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import Axios from 'axios';
+import {Network} from './network.enum';
 
 @Injectable()
 export class PeerService {
@@ -9,7 +10,7 @@ export class PeerService {
 
   private api: ApiPromise;
 
-  public constructor(private readonly configService: ConfigService,) {}
+  public constructor(private readonly configService: ConfigService) {}
 
   /**
    * Fetch the list of peer nodes connected to the network
@@ -19,13 +20,21 @@ export class PeerService {
   public async fetch(network: string): Promise<any> {
     this.logger.log(`About to fetch node details`);
     let networkWsUrl;
-    if (network === 'TestNet') {
-      networkWsUrl = this.configService.get('TESTNET_WS_URL');
-    } else if (network === 'Dev') {
-      networkWsUrl = this.configService.get('DEV_WS_URL');
-    } else if (network === 'Dev1') {
-      networkWsUrl = this.configService.get('DEV1_WS_URL');
+    switch (network) {
+      case Network.TESTNET:
+        networkWsUrl = this.configService.get('TESTNET_WS_URL');
+        break;
+      case Network.DEV:
+        networkWsUrl = this.configService.get('DEV_WS_URL');
+        break;
+
+      case Network.DEV1:
+        networkWsUrl = this.configService.get('DEV1_WS_URL');
+        break;
+      default:
+        break;
     }
+
     const wsProvider = new WsProvider(networkWsUrl);
     this.api = await ApiPromise.create({provider: wsProvider});
     await this.api.isReady;
@@ -48,7 +57,7 @@ export class PeerService {
             hash: peer.bestHash.toString(),
             bestNumber: peer.bestNumber.toString(),
             ip,
-            country : `${country.city}, ${country.country}`,
+            country: `${country.city}, ${country.country}`,
           };
           data.push(tempData);
         }
@@ -63,7 +72,7 @@ export class PeerService {
    * @returns city and country
    */
   public async geoLocation(ip: string): Promise<any> {
-    const response = await (await (Axios.get(`http://ipwhois.app/json/${ip}?objects=country,city`))).data;
+    const response = await (await Axios.get(`http://ipwhois.app/json/${ip}?objects=country,city`)).data;
     return response;
   }
 }
