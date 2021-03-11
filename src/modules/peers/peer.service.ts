@@ -1,4 +1,4 @@
-import {Injectable, Logger} from '@nestjs/common';
+import {Injectable, Logger, BadRequestException} from '@nestjs/common';
 import {ConfigService} from '../config/config.service';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import Axios from 'axios';
@@ -32,6 +32,7 @@ export class PeerService {
         networkWsUrl = this.configService.get('DEV1_WS_URL');
         break;
       default:
+        throw new BadRequestException('Failed to detect the network type.');
         break;
     }
 
