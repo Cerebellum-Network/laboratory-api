@@ -8,6 +8,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### vNext
 * Added peer module
 
+### v1.2.0
+* Added API for node health-check (block finalization)
+
 ### v1.1.2
 * Update error message
 

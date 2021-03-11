@@ -1,3 +1,4 @@
+import {HealthModule} from './modules/health/health.module';
 import {Module} from '@nestjs/common';
 import {DatabaseModule} from './modules/database/database.module';
 import {ConfigModule} from './modules/config/config.module';
@@ -7,7 +8,11 @@ import {FriendlyBotModule} from './modules/friendly-bot/friendly-bot.module';
 import {PeerModule} from './modules/peers/peer.module';
 
 @Module({
+<<<<<<< HEAD
   imports: [BlockScannerModule, FriendlyBotModule, PeerModule, ConfigModule, DatabaseModule],
+=======
+  imports: [BlockScannerModule, FriendlyBotModule, ConfigModule, DatabaseModule, HealthModule],
+>>>>>>> dev
   controllers: [HealthCheckController],
   providers: [],
 })
