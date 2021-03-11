@@ -8,11 +8,7 @@ import {FriendlyBotModule} from './modules/friendly-bot/friendly-bot.module';
 import {PeerModule} from './modules/peers/peer.module';
 
 @Module({
-<<<<<<< HEAD
-  imports: [BlockScannerModule, FriendlyBotModule, PeerModule, ConfigModule, DatabaseModule],
-=======
-  imports: [BlockScannerModule, FriendlyBotModule, ConfigModule, DatabaseModule, HealthModule],
->>>>>>> dev
+  imports: [BlockScannerModule, FriendlyBotModule, PeerModule, ConfigModule, DatabaseModule, HealthModule],
   controllers: [HealthCheckController],
   providers: [],
 })
