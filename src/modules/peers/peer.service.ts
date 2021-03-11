@@ -1,6 +1,7 @@
 import {Injectable, Logger} from '@nestjs/common';
 import {ConfigService} from '../config/config.service';
 import {ApiPromise, WsProvider} from '@polkadot/api';
+import Axios from 'axios';
 
 @Injectable()
 export class PeerService {
@@ -8,10 +9,15 @@ export class PeerService {
 
   private api: ApiPromise;
 
-  public constructor(private readonly configService: ConfigService) {}
+  public constructor(private readonly configService: ConfigService,) {}
 
-   public async fetch(network: string): Promise<any> {
-      this.logger.log(`About to fetch node details`);
+  /**
+   * Fetch the list of peer nodes connected to the network
+   * @param network network string
+   * @returns peer details
+   */
+  public async fetch(network: string): Promise<any> {
+    this.logger.log(`About to fetch node details`);
     let networkWsUrl;
     if (network === 'TestNet') {
       networkWsUrl = this.configService.get('TESTNET_WS_URL');
@@ -35,17 +41,29 @@ export class PeerService {
           let tempData = {};
           const address = value.knownAddresses[0].toString();
           const ip = address.substring(address.lastIndexOf('4/') + 2, address.lastIndexOf('/tcp'));
+          const country = await this.geoLocation(ip);
           tempData = {
             peerId: peer.peerId.toString(),
             roles: peer.roles.toString(),
             hash: peer.bestHash.toString(),
             bestNumber: peer.bestNumber.toString(),
             ip,
+            country : `${country.city}, ${country.country}`,
           };
           data.push(tempData);
         }
       }
     }
     return data;
+  }
+
+  /**
+   * Fetch location of the IP address
+   * @param ip IP address
+   * @returns city and country
+   */
+  public async geoLocation(ip: string): Promise<any> {
+    const response = await (await (Axios.get(`http://ipwhois.app/json/${ip}?objects=country,city`))).data;
+    return response;
   }
 }
