@@ -1,5 +1,11 @@
 import {Controller, Get, HttpStatus, Inject, Res} from '@nestjs/common';
-import {ApiInternalServerErrorResponse, ApiGatewayTimeoutResponse, ApiTags, ApiResponse, ApiNotFoundResponse} from '@nestjs/swagger';
+import {
+  ApiInternalServerErrorResponse,
+  ApiGatewayTimeoutResponse,
+  ApiTags,
+  ApiResponse,
+  ApiNotFoundResponse,
+} from '@nestjs/swagger';
 import {HealthService} from './health.service';
 import {ConfigService} from '../config/config.service';
 import {BlockStatusDto} from './dto/block-status.dto';
@@ -37,5 +43,24 @@ export class HealthController {
       res.status(HttpStatus.NOT_FOUND).send();
     }
     res.status(HttpStatus.NO_CONTENT).send();
+  }
+
+  @Get('block-production')
+  @ApiResponse({status: 204, description: 'Block production is healthy.'})
+  @ApiNotFoundResponse({description: 'Block production is unhealthy.'})
+  public async blockProduction(@Res() res: Response): Promise<any> {
+    const diff = await this.healthService.blockProduction();
+    if (diff) {
+      res.status(HttpStatus.NO_CONTENT).send();
+    }
+    res.status(HttpStatus.NOT_FOUND).send();
+  }
+
+  @Get('node-dropped')
+  @ApiResponse({status: 204, description: 'Validator node is healthy.'})
+  @ApiNotFoundResponse({description: 'Validator node is unhealthy.'})
+  public async nodeDropped(@Res() res: Response): Promise<any> {
+    const diff = await this.healthService.validatorNode();
+    res.send(diff);
   }
 }
