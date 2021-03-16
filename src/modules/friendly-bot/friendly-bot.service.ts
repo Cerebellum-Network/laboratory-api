@@ -12,6 +12,11 @@ import {AssetDto} from './dto/assets.dto';
 import {BalanceDto} from './dto/balance.dto';
 import {Hash} from '@polkadot/types/interfaces';
 
+enum NETWORKS {
+  testNet = 'TESTNET',
+  dev = 'TESTNET_DEV',
+  dev1 = 'TESTNET_DEV1',
+}
 @Injectable()
 export class FriendlyBotService implements FriendlyBotServiceInterface {
   public logger = new Logger(FriendlyBotService.name);
@@ -36,8 +41,8 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     private readonly botEntityRepository: Repository<PayoutEntity>,
   ) {
     this.testNetInit();
-    // this.devInit();
-    // this.dev1Init();
+    this.devInit();
+    this.dev1Init();
   }
 
   public async testNetInit(): Promise<ApiPromise> {
@@ -77,7 +82,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
   }
 
   public async dev1Init(): Promise<ApiPromise> {
-    const devWsUrl = this.configService.get('DEV_WS_URL');
+    const devWsUrl = this.configService.get('NETWORK_WS_URL');
     const wsProvider = new WsProvider(devWsUrl);
     this.dev1Api = await ApiPromise.create({provider: wsProvider});
     await this.dev1Api.isReady;
@@ -96,9 +101,9 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
 
   public async issueToken(destination: string, network: string): Promise<AssetDto> {
     // formatBalance(balance, {decimals: Number(decimal)});
-    const networkType = ["TestNet", "Dev", "Dev1"];
+    const networkType = ['TESTNET', 'TESTNET_DEV', 'TESTNET_DEV1'];
     if (!networkType.includes(network)) {
-      throw new BadRequestException(`Invalid network type, Network type can be Network, Dev, Dev1`);
+      throw new BadRequestException(`Invalid network type, Network type can be ${networkType}`);
     }
     const {balance} = await this.getBalance(destination, network);
     const initialBal = +balance / 10 ** 15;
@@ -127,15 +132,25 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     botEntity.destination = destination;
     botEntity.txnHash = hash;
     botEntity.value = value;
-    if (network === 'TestNet') {
-      botEntity.sender = this.testNetappKeyring.address;
-      botEntity.network = NetworkEnum.TESTNET;
-    } else if (network === 'Dev') {
-      botEntity.sender = this.devappKeyring.address;
-      botEntity.network = NetworkEnum.DEV;
-    } else if (network === 'Dev1') {
-      botEntity.sender = this.dev1appKeyring.address;
-      botEntity.network = NetworkEnum.DEV1;
+    switch (network) {
+      case NETWORKS.testNet: {
+        botEntity.sender = this.testNetappKeyring.address;
+        botEntity.network = NetworkEnum.TESTNET;
+        break;
+      }
+
+      case NETWORKS.dev: {
+        botEntity.sender = this.devappKeyring.address;
+        botEntity.network = NetworkEnum.DEV;
+        break;
+      }
+      case NETWORKS.dev1: {
+        botEntity.sender = this.dev1appKeyring.address;
+        botEntity.network = NetworkEnum.DEV1;
+        break;
+      }
+      default:
+        break;
     }
     await this.botEntityRepository.save(botEntity);
 
@@ -146,18 +161,27 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     this.logger.log(`About to get balance for: ${address}`);
     let decimal;
     let balance;
-    if (network === 'TestNet') {
-      const account = await this.testNetApi.query.system.account(address);
-      balance = account.data.free.toString();
-      decimal = await this.testNetApi.registry.chainDecimals;
-    } else if (network === 'Dev') {
-      const account = await this.testNetApi.query.system.account(address);
-      balance = account.data.free.toString();
-      decimal = await this.devApi.registry.chainDecimals;
-    } else if (network === 'Dev1') {
-      const account = await this.testNetApi.query.system.account(address);
-      balance = account.data.free.toString();
-      decimal = await this.dev1Api.registry.chainDecimals;
+    switch (network) {
+      case NETWORKS.testNet: {
+        const account = await this.testNetApi.query.system.account(address);
+        balance = account.data.free.toString();
+        decimal = await this.testNetApi.registry.chainDecimals;
+        break;
+      }
+      case NETWORKS.dev: {
+        const account = await this.testNetApi.query.system.account(address);
+        balance = account.data.free.toString();
+        decimal = await this.devApi.registry.chainDecimals;
+        break;
+      }
+      case NETWORKS.dev1: {
+        const account = await this.testNetApi.query.system.account(address);
+        balance = account.data.free.toString();
+        decimal = await this.dev1Api.registry.chainDecimals;
+        break;
+      }
+      default:
+        break;
     }
 
     return new BalanceDto(balance, decimal);
@@ -165,17 +189,27 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
 
   private async transfer(address: string, value: string, network: string): Promise<Hash> {
     this.logger.debug(`About to transfer assets to ${address}`);
-    let hash;
-    if (network === 'TestNet') {
-      const {nonce} = await this.testNetApi.query.system.account(this.testNetappKeyring.address);
-      hash = this.testNetApi.tx.balances.transfer(address, value).signAndSend(this.testNetappKeyring, {nonce});
-    } else if (network === 'Dev') {
-      const {nonce} = await this.devApi.query.system.account(this.devappKeyring.address);
-      hash = this.devApi.tx.balances.transfer(address, value).signAndSend(this.devappKeyring, {nonce});
-    } else if (network === 'Dev1') {
-      const {nonce} = await this.dev1Api.query.system.account(this.dev1appKeyring.address);
-      hash = this.dev1Api.tx.balances.transfer(address, value).signAndSend(this.dev1appKeyring, {nonce});
+    switch (network) {
+      case NETWORKS.testNet: {
+        const {nonce} = await this.testNetApi.query.system.account(this.testNetappKeyring.address);
+        console.log(address, value, network);
+        const hash = this.testNetApi.tx.balances.transfer(address, value).signAndSend(this.testNetappKeyring, {nonce});
+        return hash;
+      }
+
+      case NETWORKS.dev: {
+        const {nonce} = await this.devApi.query.system.account(this.devappKeyring.address);
+        const hash = this.devApi.tx.balances.transfer(address, value).signAndSend(this.devappKeyring, {nonce});
+        return hash;
+      }
+
+      case NETWORKS.dev1: {
+        const {nonce} = await this.dev1Api.query.system.account(this.dev1appKeyring.address);
+        const hash = this.dev1Api.tx.balances.transfer(address, value).signAndSend(this.dev1appKeyring, {nonce});
+        return hash;
+      }
+      default:
+        throw new BadRequestException(`Invalid network type`);
     }
-    return hash;
   }
 }
