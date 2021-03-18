@@ -7,7 +7,7 @@ import {ApiPromise, Keyring, WsProvider} from '@polkadot/api';
 import {KeypairType} from '@polkadot/util-crypto/types';
 import {KeyringPair} from '@polkadot/keyring/types';
 import moment from 'moment';
-import {PayoutEntity, NetworkEnum} from './entities/payout.entity';
+import {PayoutEntity} from './entities/payout.entity';
 import {AssetDto} from './dto/assets.dto';
 import {BalanceDto} from './dto/balance.dto';
 import {Hash} from '@polkadot/types/interfaces';
@@ -16,11 +16,9 @@ import {Hash} from '@polkadot/types/interfaces';
 export class FriendlyBotService implements FriendlyBotServiceInterface {
   public logger = new Logger(FriendlyBotService.name);
 
-  private networkParams: {api: ApiPromise; type: string}[] = [];
+  private networkParams: {api: ApiPromise; faucet: any, type: string}[] = [];
 
   private keyRingType: KeypairType;
-
-  private appKeyring: KeyringPair;
 
   public constructor(
     private readonly configService: ConfigService,
@@ -34,9 +32,10 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     const networks = JSON.parse(process.env.NETWORKS);
     networks.forEach(async (network) => {
       const api = await this.initProvider(network.URL);
-      this.networkParams.push({api, type: network.NETWORK});
+      const faucet = await this.initFaucet(network.FAUCET, network.PASSWORD);
+      this.logger.log(`Faucet Address: ${faucet.address}`);
+      this.networkParams.push({api, faucet, type: network.NETWORK});
     });
-    this.initFaucet();
   }
 
   public async initProvider(url: string): Promise<ApiPromise> {
@@ -48,22 +47,21 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     return api;
   }
 
-  public initFaucet() {
-    const appWalletJson = this.configService.get('APP_WALLET_JSON');
-    const appPassphrase = this.configService.get('APP_WALLET_PASSPHRASE');
+  public initFaucet(walletJson: any, password: string): any {
     const keyring = new Keyring({type: 'sr25519'});
     this.keyRingType = 'sr25519';
-    this.appKeyring = keyring.addFromJson(JSON.parse(appWalletJson));
-    this.appKeyring.decodePkcs8(appPassphrase);
-    this.logger.log(`Faucet account: ${this.appKeyring.address}`);
+    const wallet = keyring.addFromJson(walletJson);
+    wallet.decodePkcs8(password);
+    return wallet;
   }
 
-  public async issueToken(destination: string, network: NetworkEnum): Promise<AssetDto> {
+  public async issueToken(destination: string, network: string): Promise<AssetDto> {
     // formatBalance(balance, {decimals: Number(decimal)});
-    if (!Object.values(NetworkEnum).includes(network)) {
-      throw new BadRequestException(`Invalid network type, Network type can be ${Object.values(NetworkEnum)}`);
+    const networks = JSON.parse(process.env.NETWORKS);
+    if (networks.find((item) => network === item.NETWORK) === undefined) {
+      throw new BadRequestException(`Invalid network type.`);
     }
-
+    const networkParam = this.networkParams.find((item) => item.type === network);
     const {balance} = await this.getBalance(destination, network);
     const initialBal = +balance / 10 ** 15;
     this.logger.log(`Initial Balance: ${initialBal}`);
@@ -78,7 +76,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     const count = await this.botEntityRepository
       .createQueryBuilder('bots')
       .where('DATE(bots.createdAt) = :date', {date: time})
-      .andWhere('bots.network = :network', {network: NetworkEnum[network]})
+      .andWhere('bots.network = :network', {network: networkParam.type})
       .getCount();
 
     this.logger.debug(`Today's requests: ${count}`);
@@ -91,24 +89,8 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     botEntity.destination = destination;
     botEntity.txnHash = hash;
     botEntity.value = value;
-    botEntity.sender = this.appKeyring.address;
-    switch (network) {
-      case NetworkEnum.TESTNET: {
-        botEntity.network = NetworkEnum.TESTNET;
-        break;
-      }
-
-      case NetworkEnum.TESTNET_DEV: {
-        botEntity.network = NetworkEnum.TESTNET_DEV;
-        break;
-      }
-      case NetworkEnum.TESTNET_DEV1: {
-        botEntity.network = NetworkEnum.TESTNET_DEV1;
-        break;
-      }
-      default:
-        throw new BadRequestException(`Invalid network type, Network type can be ${Object.values(NetworkEnum)}`);
-    }
+    botEntity.sender = networkParam.faucet.address;
+    botEntity.network = networkParam.type;
     await this.botEntityRepository.save(botEntity);
 
     return new AssetDto(hash);
@@ -126,8 +108,8 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
   private async transfer(address: string, value: string, network: string): Promise<Hash> {
     this.logger.debug(`About to transfer assets to ${address}`);
     const networkParam = this.networkParams.find((item) => item.type === network);
-    const {nonce} = await networkParam.api.query.system.account(this.appKeyring.address);
-    const hash = networkParam.api.tx.balances.transfer(address, value).signAndSend(this.appKeyring, {nonce});
+    const {nonce} = await networkParam.api.query.system.account(networkParam.faucet.address);
+    const hash = networkParam.api.tx.balances.transfer(address, value).signAndSend(networkParam.faucet, {nonce});
     return hash;
   }
 }
