@@ -5,7 +5,6 @@ import {ConfigService} from '../config/config.service';
 import {FriendlyBotServiceInterface} from './friendly-bot.interface';
 import {ApiPromise, Keyring, WsProvider} from '@polkadot/api';
 import {KeypairType} from '@polkadot/util-crypto/types';
-import {KeyringPair} from '@polkadot/keyring/types';
 import moment from 'moment';
 import {PayoutEntity} from './entities/payout.entity';
 import {AssetDto} from './dto/assets.dto';
@@ -20,17 +19,19 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
 
   private keyRingType: KeypairType;
 
+  private networksParsed: any;
+
   public constructor(
     private readonly configService: ConfigService,
     @InjectRepository(PayoutEntity)
     private readonly botEntityRepository: Repository<PayoutEntity>,
   ) {
     this.init();
+    this.networksParsed = this.configService.get('NETWORKS');
   }
 
   public init(): any {
-    const networks = JSON.parse(process.env.NETWORKS);
-    networks.forEach(async (network) => {
+    this.networksParsed.forEach(async (network) => {
       const api = await this.initProvider(network.URL);
       const faucet = await this.initFaucet(network.FAUCET, network.PASSWORD);
       this.logger.log(`Faucet Address: ${faucet.address}`);
@@ -44,6 +45,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     await api.isReady;
     const chain = await api.rpc.system.chain();
     this.logger.log(`Connected to ${chain}`);
+
     return api;
   }
 
@@ -52,13 +54,13 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     this.keyRingType = 'sr25519';
     const wallet = keyring.addFromJson(walletJson);
     wallet.decodePkcs8(password);
+
     return wallet;
   }
 
   public async issueToken(destination: string, network: string): Promise<AssetDto> {
     // formatBalance(balance, {decimals: Number(decimal)});
-    const networks = JSON.parse(process.env.NETWORKS);
-    if (networks.find((item) => network === item.NETWORK) === undefined) {
+    if (this.networksParsed.find((item) => network === item.NETWORK) === undefined) {
       throw new BadRequestException(`Invalid network type.`);
     }
     const networkParam = this.networkParams.find((item) => item.type === network);
@@ -102,6 +104,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     const account = await networkParam.api.query.system.account(address);
     const balance = account.data.free;
     const decimal = await networkParam.api.registry.chainDecimals;
+
     return new BalanceDto(balance, decimal);
   }
 
@@ -109,7 +112,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     this.logger.debug(`About to transfer assets to ${address}`);
     const networkParam = this.networkParams.find((item) => item.type === network);
     const {nonce} = await networkParam.api.query.system.account(networkParam.faucet.address);
-    const hash = networkParam.api.tx.balances.transfer(address, value).signAndSend(networkParam.faucet, {nonce});
-    return hash;
+
+    return networkParam.api.tx.balances.transfer(address, value).signAndSend(networkParam.faucet, {nonce});
   }
 }
