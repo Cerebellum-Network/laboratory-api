@@ -26,8 +26,8 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     @InjectRepository(PayoutEntity)
     private readonly botEntityRepository: Repository<PayoutEntity>,
   ) {
+    this.networksParsed = JSON.parse(this.configService.get('NETWORKS'));
     this.init();
-    this.networksParsed = this.configService.get('NETWORKS');
   }
 
   public init(): any {

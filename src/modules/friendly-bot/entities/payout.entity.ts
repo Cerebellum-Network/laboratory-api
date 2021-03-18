@@ -16,7 +16,7 @@ export class PayoutEntity {
   @Column()
   public destination: string;
 
-  @Column()
+  @Column({nullable: true})
   public network: string;
 
   @CreateDateColumn()
