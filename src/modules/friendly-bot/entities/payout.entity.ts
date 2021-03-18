@@ -1,9 +1,9 @@
 import {Column, CreateDateColumn, Entity, PrimaryGeneratedColumn} from 'typeorm';
 
 export enum NetworkEnum {
-  TESTNET = '0',
-  DEV = '1',
-  DEV1 = '2',
+  TESTNET = 'TESTNET',
+  TESTNET_DEV = 'TESTNETDEV',
+  TESTNET_DEV1 = 'TESTNETDEV1',
 }
 @Entity('payouts')
 export class PayoutEntity {
@@ -24,7 +24,7 @@ export class PayoutEntity {
 
   @Column({
     type: 'enum',
-    enum: NetworkEnum
+    enum: NetworkEnum,
   })
   public network: NetworkEnum;
 
@@ -32,5 +32,5 @@ export class PayoutEntity {
   public createdAt: Date;
 
   @Column({type: 'inet', nullable: true})
-  public ip
+  public ip;
 }

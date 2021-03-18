@@ -12,11 +12,6 @@ import {AssetDto} from './dto/assets.dto';
 import {BalanceDto} from './dto/balance.dto';
 import {Hash} from '@polkadot/types/interfaces';
 
-enum NETWORKS {
-  testNet = 'TESTNET',
-  dev = 'TESTNET_DEV',
-  dev1 = 'TESTNET_DEV1',
-}
 @Injectable()
 export class FriendlyBotService implements FriendlyBotServiceInterface {
   public logger = new Logger(FriendlyBotService.name);
@@ -99,11 +94,10 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     return this.dev1Api;
   }
 
-  public async issueToken(destination: string, network: string): Promise<AssetDto> {
+  public async issueToken(destination: string, network: NetworkEnum): Promise<AssetDto> {
     // formatBalance(balance, {decimals: Number(decimal)});
-    const networkType = ['TESTNET', 'TESTNET_DEV', 'TESTNET_DEV1'];
-    if (!networkType.includes(network)) {
-      throw new BadRequestException(`Invalid network type, Network type can be ${networkType}`);
+    if (!Object.values(NetworkEnum).includes(network)) {
+      throw new BadRequestException(`Invalid network type, Network type can be ${Object.values(NetworkEnum)}`);
     }
     const {balance} = await this.getBalance(destination, network);
     const initialBal = +balance / 10 ** 15;
@@ -119,7 +113,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     const count = await this.botEntityRepository
       .createQueryBuilder('bots')
       .where('DATE(bots.createdAt) = :date', {date: time})
-      .andWhere('bots.network = :network', {network: NetworkEnum.TESTNET})
+      .andWhere('bots.network = :network', {network: NetworkEnum[network]})
       .getCount();
 
     this.logger.debug(`Today's requests: ${count}`);
@@ -133,23 +127,24 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     botEntity.txnHash = hash;
     botEntity.value = value;
     switch (network) {
-      case NETWORKS.testNet: {
+      case NetworkEnum.TESTNET: {
         botEntity.sender = this.testNetappKeyring.address;
         botEntity.network = NetworkEnum.TESTNET;
         break;
       }
 
-      case NETWORKS.dev: {
+      case NetworkEnum.TESTNET_DEV: {
         botEntity.sender = this.devappKeyring.address;
-        botEntity.network = NetworkEnum.DEV;
+        botEntity.network = NetworkEnum.TESTNET_DEV;
         break;
       }
-      case NETWORKS.dev1: {
+      case NetworkEnum.TESTNET_DEV1: {
         botEntity.sender = this.dev1appKeyring.address;
-        botEntity.network = NetworkEnum.DEV1;
+        botEntity.network = NetworkEnum.TESTNET_DEV1;
         break;
       }
       default:
+        throw new BadRequestException(`Invalid network type, Network type can be ${Object.values(NetworkEnum)}`);
         break;
     }
     await this.botEntityRepository.save(botEntity);
@@ -162,25 +157,26 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     let decimal;
     let balance;
     switch (network) {
-      case NETWORKS.testNet: {
+      case NetworkEnum.TESTNET: {
         const account = await this.testNetApi.query.system.account(address);
         balance = account.data.free.toString();
         decimal = await this.testNetApi.registry.chainDecimals;
         break;
       }
-      case NETWORKS.dev: {
+      case NetworkEnum.TESTNET_DEV: {
         const account = await this.testNetApi.query.system.account(address);
         balance = account.data.free.toString();
         decimal = await this.devApi.registry.chainDecimals;
         break;
       }
-      case NETWORKS.dev1: {
+      case NetworkEnum.TESTNET_DEV1: {
         const account = await this.testNetApi.query.system.account(address);
         balance = account.data.free.toString();
         decimal = await this.dev1Api.registry.chainDecimals;
         break;
       }
       default:
+        throw new BadRequestException(`Invalid network type, Network type can be ${Object.values(NetworkEnum)}`);
         break;
     }
 
@@ -190,20 +186,19 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
   private async transfer(address: string, value: string, network: string): Promise<Hash> {
     this.logger.debug(`About to transfer assets to ${address}`);
     switch (network) {
-      case NETWORKS.testNet: {
+      case NetworkEnum.TESTNET: {
         const {nonce} = await this.testNetApi.query.system.account(this.testNetappKeyring.address);
-        console.log(address, value, network);
         const hash = this.testNetApi.tx.balances.transfer(address, value).signAndSend(this.testNetappKeyring, {nonce});
         return hash;
       }
 
-      case NETWORKS.dev: {
+      case NetworkEnum.TESTNET_DEV: {
         const {nonce} = await this.devApi.query.system.account(this.devappKeyring.address);
         const hash = this.devApi.tx.balances.transfer(address, value).signAndSend(this.devappKeyring, {nonce});
         return hash;
       }
 
-      case NETWORKS.dev1: {
+      case NetworkEnum.TESTNET_DEV1: {
         const {nonce} = await this.dev1Api.query.system.account(this.dev1appKeyring.address);
         const hash = this.dev1Api.tx.balances.transfer(address, value).signAndSend(this.dev1appKeyring, {nonce});
         return hash;
