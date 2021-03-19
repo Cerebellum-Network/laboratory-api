@@ -22,7 +22,7 @@ export class BlockScannerController {
     @Query('offset') offset: number,
     @Query('limit') limit: number,
     @Param('accountId') accountId: string,
-    @Param('network') network: string
+    @Param('network') network: string,
   ): Promise<BlocksDataDto> {
     return this.blockScannerService.getAccountBlocks(accountId, offset, limit, network);
   }
@@ -38,14 +38,12 @@ export class BlockScannerController {
   }
 
   @Get('latest-block/:network')
-  public latestBlock(
-    @Param('network') network: string
-  ): Promise<LatestBlockDto> {
+  public latestBlock(@Param('network') network: string): Promise<LatestBlockDto> {
     return this.blockScannerService.getLatestBlock(network);
   }
 
   @Get('balance/:address/:network')
-  public balance(@Param('address') address: string, @Param('network') network:string): Promise<BalanceDto> {
+  public balance(@Param('address') address: string, @Param('network') network: string): Promise<BalanceDto> {
     return this.blockScannerService.getBalance(address, network);
   }
 }

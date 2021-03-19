@@ -42,7 +42,7 @@ export interface ISanitizedArgs {
 export class BlockScannerService implements BlockScannerServiceInterface {
   public logger = new Logger(BlockScannerService.name);
 
-  private networkApi: {api: ApiPromise; type: string}[] = [];
+  private networkApis: {api: ApiPromise; type: string}[] = [];
 
   public constructor(
     @InjectRepository(BlockEntity)
@@ -61,7 +61,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public startScanning() {
     this.logger.log(`About to start scanning network`);
-    this.networkApi.forEach((item) => {
+    this.networkApis.forEach((item) => {
       this.processOldBlock(item.api, item.type);
     });
   }
@@ -74,7 +74,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       await api.isReady;
       const chain = await api.rpc.system.chain();
       this.logger.log(`Connected to ${chain}`);
-      this.networkApi.push({api, type: network.type});
+      this.networkApis.push({api, type: network.type});
     }
   }
 
@@ -165,13 +165,13 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     const balance = await this.getBalance(accountId, network);
     const [result, count] = await this.transactionEntityRepository.findAndCount({
       where: {
-        senderId: accountId, networkType: network
+        senderId: accountId,
+        networkType: network,
       },
       take: limit,
       skip: offset,
     });
 
-    console.log(`result: ${JSON.stringify(result)}`);
     const data = await result.map((transaction) => toTransactionDto(transaction));
 
     return new TransactionsDataDto(data, count, balance);
@@ -190,7 +190,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public async getBalance(address: string, network: string): Promise<any> {
     this.logger.debug(`About to get balance for: ${address}`);
-    const networkParam = this.networkApi.find((item) => item.type === network);
+    const networkParam = this.networkApis.find((item) => item.type === network);
     const {
       data: {free: balance},
     } = await networkParam.api.query.system.account(address);
