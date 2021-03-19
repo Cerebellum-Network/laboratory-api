@@ -37,6 +37,9 @@ export class TransactionEntity {
 
   @Column()
   public timestamp: Date;
+
+  @Column()
+  public networkType: string;
   
   @ManyToOne(() => BlockEntity, blocks => blocks.blockNumber)
   public block: BlockEntity;

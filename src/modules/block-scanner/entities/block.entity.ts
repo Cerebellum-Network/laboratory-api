@@ -21,6 +21,9 @@ export class BlockEntity {
   @Column()
   public extrinsicRoot: string;
 
+  @Column()
+  public networkType: string;
+
   @Column({nullable: true})
   public authorPublicKey: string;
 
