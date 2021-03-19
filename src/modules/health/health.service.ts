@@ -68,11 +68,6 @@ export class HealthService {
     return false;
   }
 
-  public async validatorNode(): Promise<any> {
-    const validator = await this.api.query.staking.validators('');
-    return validator;
-  }
-
   private async blockNumber(): Promise<any> {
     const finalized = Number(await this.api.derive.chain.bestNumberFinalized());
     const best = Number(await this.api.derive.chain.bestNumber());

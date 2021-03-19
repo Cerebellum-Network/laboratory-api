@@ -55,12 +55,4 @@ export class HealthController {
     }
     res.status(HttpStatus.NOT_FOUND).send();
   }
-
-  @Get('node-dropped')
-  @ApiResponse({status: 204, description: 'Validator node is healthy.'})
-  @ApiNotFoundResponse({description: 'Validator node is unhealthy.'})
-  public async nodeDropped(@Res() res: Response): Promise<any> {
-    const diff = await this.healthService.validatorNode();
-    res.send(diff);
-  }
 }
