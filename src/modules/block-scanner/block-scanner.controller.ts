@@ -17,31 +17,33 @@ export class BlockScannerController {
     private readonly blockScannerService: BlockScannerService,
   ) {}
 
-  @Get('account-blocks/:accountId')
+  @Get('account-blocks/:accountId/:network')
   public accountBlocks(
     @Query('offset') offset: number,
     @Query('limit') limit: number,
     @Param('accountId') accountId: string,
+    @Param('network') network: string,
   ): Promise<BlocksDataDto> {
-    return this.blockScannerService.getAccountBlocks(accountId, offset, limit);
+    return this.blockScannerService.getAccountBlocks(accountId, offset, limit, network);
   }
 
-  @Get('account-transactions/:accountId')
+  @Get('account-transactions/:accountId/:network')
   public accountTransactions(
     @Query('offset') offset: number,
     @Query('limit') limit: number,
     @Param('accountId') accountId: string,
+    @Param('network') network: string,
   ): Promise<TransactionsDataDto> {
-    return this.blockScannerService.getTransactions(accountId, offset, limit);
+    return this.blockScannerService.getTransactions(accountId, offset, limit, network);
   }
 
-  @Get('latest-block')
-  public latestBlock(): Promise<LatestBlockDto> {
-    return this.blockScannerService.getLatestBlock();
+  @Get('latest-block/:network')
+  public latestBlock(@Param('network') network: string): Promise<LatestBlockDto> {
+    return this.blockScannerService.getLatestBlock(network);
   }
 
-  @Get('balance/:address')
-  public balance(@Param('address') address: string): Promise<BalanceDto> {
-    return this.blockScannerService.getBalance(address);
+  @Get('balance/:address/:network')
+  public balance(@Param('address') address: string, @Param('network') network: string): Promise<BalanceDto> {
+    return this.blockScannerService.getBalance(address, network);
   }
 }
