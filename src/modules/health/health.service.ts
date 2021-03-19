@@ -70,7 +70,6 @@ export class HealthService {
 
   public async validatorNode(): Promise<any> {
     const validator = await this.api.query.staking.validators('');
-    console.log(validator);
     return validator;
   }
 
@@ -84,7 +83,6 @@ export class HealthService {
     return new Promise((resolve, reject) => {
       extrinsic.forEach((element) => {
         if (element.method.section === 'timestamp') {
-          // eslint-disable-next-line prefer-destructuring
           resolve(element.method.args[0]);
         }
       });
