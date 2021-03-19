@@ -5,4 +5,6 @@ export class PostAssetRequestDto {
   @IsNotEmpty()
   @ApiProperty()
   public destination: string;
+
+  public network: string;
 }

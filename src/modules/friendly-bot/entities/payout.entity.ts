@@ -1,5 +1,4 @@
 import {Column, CreateDateColumn, Entity, PrimaryGeneratedColumn} from 'typeorm';
-
 @Entity('payouts')
 export class PayoutEntity {
   @PrimaryGeneratedColumn()
@@ -17,9 +16,12 @@ export class PayoutEntity {
   @Column()
   public destination: string;
 
+  @Column({nullable: true})
+  public network: string;
+
   @CreateDateColumn()
   public createdAt: Date;
 
   @Column({type: 'inet', nullable: true})
-  public ip
+  public ip;
 }
