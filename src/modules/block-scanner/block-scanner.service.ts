@@ -74,7 +74,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       await api.isReady;
       const chain = await api.rpc.system.chain();
       this.logger.log(`Connected to ${chain}`);
-      this.networkApis.push({api, type: network.type});
+      this.networkApis.push({api, type: network.NETWORK});
     }
   }
 

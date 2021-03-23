@@ -21,7 +21,7 @@ export class BlockEntity {
   @Column()
   public extrinsicRoot: string;
 
-  @Column()
+  @Column({nullable: true})
   public networkType: string;
 
   @Column({nullable: true})

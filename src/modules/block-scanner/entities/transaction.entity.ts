@@ -38,7 +38,7 @@ export class TransactionEntity {
   @Column()
   public timestamp: Date;
 
-  @Column()
+  @Column({nullable: true})
   public networkType: string;
   
   @ManyToOne(() => BlockEntity, blocks => blocks.blockNumber)
