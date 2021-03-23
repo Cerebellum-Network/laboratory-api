@@ -22,6 +22,9 @@ export class BlockEntity {
   public extrinsicRoot: string;
 
   @Column({nullable: true})
+  public networkType: string;
+
+  @Column({nullable: true})
   public authorPublicKey: string;
 
   @Column("timestamp without time zone")

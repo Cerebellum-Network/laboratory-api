@@ -2,7 +2,6 @@ import {Injectable, Logger, BadRequestException} from '@nestjs/common';
 import {ConfigService} from '../config/config.service';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import Axios from 'axios';
-import {Network} from './network.enum';
 
 @Injectable()
 export class PeerService {
@@ -10,7 +9,11 @@ export class PeerService {
 
   private api: ApiPromise;
 
-  public constructor(private readonly configService: ConfigService) {}
+  private networksParsed: any;
+
+  public constructor(private readonly configService: ConfigService) {
+    this.networksParsed = JSON.parse(this.configService.get('NETWORKS'));
+  }
 
   /**
    * Fetch the list of peer nodes connected to the network
@@ -19,24 +22,13 @@ export class PeerService {
    */
   public async fetch(network: string): Promise<any> {
     this.logger.log(`About to fetch node details`);
-    let networkWsUrl;
-    switch (network) {
-      case Network.TESTNET:
-        networkWsUrl = this.configService.get('TESTNET_WS_URL');
-        break;
-      case Network.DEV:
-        networkWsUrl = this.configService.get('DEV_WS_URL');
-        break;
 
-      case Network.DEV1:
-        networkWsUrl = this.configService.get('DEV1_WS_URL');
-        break;
-      default:
-        throw new BadRequestException('Failed to detect the network type.');
-        break;
+    const networkParam = this.networksParsed.find((item) => item.NETWORK === network);
+    if (!networkParam) {
+      throw new BadRequestException(`Invalid network type ${network}`);
     }
 
-    const wsProvider = new WsProvider(networkWsUrl);
+    const wsProvider = new WsProvider(networkParam.URL);
     this.api = await ApiPromise.create({provider: wsProvider});
     await this.api.isReady;
     const chain = await this.api.rpc.system.chain();
