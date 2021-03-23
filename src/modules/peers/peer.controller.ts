@@ -23,8 +23,7 @@ export class PeerController {
   }
 
   @Get('/treasury-balance/:network')
-  public async treasuryBalance(@Param('network') network: string): Promise<any>{
-    const balance = await this.peerService.treasuryBalance(network);
-    return balance;
+  public  treasuryBalance(@Param('network') network: string): Promise<any>{
+    return this.peerService.treasuryBalance(network);
   }
 }
