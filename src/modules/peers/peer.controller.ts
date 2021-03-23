@@ -21,4 +21,10 @@ export class PeerController {
     const result = await this.peerService.fetch(network);
     return result;
   }
+
+  @Get('/treasury-balance/:network')
+  public async treasuryBalance(@Param('network') network: string): Promise<any>{
+    const balance = await this.peerService.treasuryBalance(network);
+    return balance;
+  }
 }
