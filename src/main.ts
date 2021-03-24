@@ -23,8 +23,8 @@ async function bootstrap() {
   app.enableCors();
 
   const options = new DocumentBuilder()
-    .setTitle('Block Scanner Service')
-    .setDescription('The Block Scanner Service API description')
+    .setTitle('Laboratory API')
+    .setDescription('Laboratory API description')
     .setVersion(version)
     .addServer(`/${servicePrefix}`)
     .build();
