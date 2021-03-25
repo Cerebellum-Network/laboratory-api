@@ -66,7 +66,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     const networkParam = this.networkParams.find((item) => item.type === network);
     const {balance} = await this.getBalance(destination, network);
     const initialBal = +balance / 10 ** 15;
-    this.logger.log(`Initial Balance: ${initialBal}`);
+    this.logger.debug(`Initial Balance: ${initialBal}`);
     const value = await this.configService.get('NUMBER_OF_TOKENS_TO_SEND');
     const maxBalance = Number(this.configService.get('MAX_BALANCE'));
     const maxRequestPerDay = Number(await this.configService.get('REQUEST_PER_DAY'));
@@ -99,7 +99,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
   }
 
   private async getBalance(address: string, network: string): Promise<BalanceDto> {
-    this.logger.log(`About to get balance for: ${address}`);
+    this.logger.debug(`About to get balance for: ${address}`);
     const networkParam = this.networkParams.find((item) => item.type === network);
     const account = await networkParam.api.query.system.account(address);
     const balance = account.data.free;

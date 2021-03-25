@@ -60,14 +60,14 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   }
 
   public startScanning() {
-    this.logger.log(`About to start scanning network`);
+    this.logger.debug(`About to start scanning network`);
     this.networkApis.forEach((item) => {
       this.processOldBlock(item.api, item.type);
     });
   }
 
   public async initNetwork(networks: any) {
-    this.logger.log('Init Network');
+    this.logger.debug('Init Network');
     for (const network of networks) {
       const provider = new WsProvider(network.URL);
       const api = await ApiPromise.create({provider});
@@ -359,7 +359,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
           transactionEntity.networkType = network;
           await this.transactionEntityRepository.save(transactionEntity);
         } else {
-          this.logger.log(`No Transaction for block: ${block.blockNumber}\n\n`);
+          this.logger.debug(`No Transaction for block: ${block.blockNumber}\n\n`);
         }
       });
     } catch (error) {

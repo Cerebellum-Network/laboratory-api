@@ -40,7 +40,7 @@ export class PeerService {
    * @returns peer details
    */
   public async fetch(network: string): Promise<any> {
-    this.logger.log(`About to fetch node details`);
+    this.logger.debug(`About to fetch node details`);
 
     if (this.networksParsed.find((item) => network === item.NETWORK) === undefined) {
       throw new BadRequestException(`Invalid network type.`);
