@@ -6,7 +6,7 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 
 ## Release notes
 ### vNext
-* 
+* Added API to fetch total issued CERE tokens.
 
 ### v1.4.0
 * Added support for block-explorer to scan several network.
