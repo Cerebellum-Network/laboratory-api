@@ -1,6 +1,6 @@
 import {ApiInternalServerErrorResponse, ApiGatewayTimeoutResponse, ApiTags} from '@nestjs/swagger';
-import {Controller, Inject, Post, Body, Logger} from '@nestjs/common';
-import {RateLimit} from 'nestjs-rate-limiter';
+import {Controller, Inject, Post, Body, Logger, UseInterceptors} from '@nestjs/common';
+import {RateLimit, RateLimiterInterceptor} from 'nestjs-rate-limiter';
 import {ConfigService} from '../config/config.service';
 import {FriendlyBotService} from './friendly-bot.service';
 import {AssetDto} from './dto/assets.dto';
@@ -21,6 +21,7 @@ export class FriendlyBotController {
     private readonly configService: ConfigService,
   ) {}
 
+  @UseInterceptors(RateLimiterInterceptor)
   @RateLimit({
     keyPrefix: 'request-assets',
     points: 3, // TODO: Get this parameter from config
