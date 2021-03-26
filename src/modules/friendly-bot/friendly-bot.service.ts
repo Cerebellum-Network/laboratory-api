@@ -102,7 +102,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
   }
 
   private async getBalance(address: string, network: string): Promise<BalanceDto> {
-    this.logger.debug(`About to get balance for: ${address}`);
+    this.logger.log(`About to get balance for: ${address}`);
     const networkParam = this.networkParams.find((item) => item.type === network);
     const account = await networkParam.api.query.system.account(address);
     const balance = account.data.free;

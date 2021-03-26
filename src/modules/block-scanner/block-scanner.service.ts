@@ -60,7 +60,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   }
 
   public startScanning() {
-    this.logger.debug(`About to start scanning network`);
+    this.logger.log(`About to start scanning network`);
     this.networkApis.forEach((item) => {
       this.processOldBlock(item.api, item.type);
     });

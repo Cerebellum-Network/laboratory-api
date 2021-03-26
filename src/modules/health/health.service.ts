@@ -52,7 +52,7 @@ export class HealthService {
   }
 
   public async blockProduction(): Promise<boolean> {
-    this.logger.debug(`About to fetch block production time`);
+    this.logger.log(`About to fetch block production time`);
     const {block} = await this.api.rpc.chain.getBlock();
 
     const {header, extrinsics} = block;
