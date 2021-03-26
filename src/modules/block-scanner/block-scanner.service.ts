@@ -54,9 +54,15 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public async init(): Promise<any> {
     this.logger.debug('About to scan the network');
-    const networks = JSON.parse(this.configService.get('NETWORKS'));
-    await this.initNetwork(networks);
-    this.startScanning();
+    try {
+      const networks = JSON.parse(this.configService.get('NETWORKS'));
+      await this.initNetwork(networks);
+      this.startScanning();
+    } catch (error) {
+      this.logger.error(error.toString());
+      this.init();
+    }
+  
   }
 
   public startScanning() {
@@ -80,7 +86,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   // Process the blocks from where it has been leftout to current block
   public async processOldBlock(api: any, network: string): Promise<void> {
-    const query = this.blockEntityRepository
+    try {
+      const query = this.blockEntityRepository
       .createQueryBuilder('blocks')
       .select('MAX(CAST( blocks.blockNumber  AS INT))', 'blockNumber')
       .where('blocks.networkType = :type', {type: network});
@@ -92,11 +99,17 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       latestBlock = await api.rpc.chain.getHeader();
     }
     this.processBlock(api, network);
+    } catch (error) {
+      this.logger.error(error.toString());
+      this.init();
+    }
+    
   }
 
   // Process the current blocks.
   public async processBlock(api: any, network: string): Promise<void> {
-    const query = this.blockEntityRepository
+    try {
+      const query = this.blockEntityRepository
       .createQueryBuilder('blocks')
       .select('MAX(CAST( blocks.blockNumber AS INT))', 'blockNumber')
       .where('blocks.networkType = :type', {type: network});
@@ -110,10 +123,15 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         await this.scanChain(Number(header.number), api, network);
       });
     }
+    } catch (error) {
+      this.logger.error(error.toString());
+      this.init();
+    }
+    
   }
 
   public async scanChain(blockNumber: number, api: any, network: string): Promise<any> {
-    try {
+   try {
       const blockHash: any = await api.rpc.chain.getBlockHash(blockNumber);
       const momentPrev = await api.query.timestamp.now.at(blockHash);
       // Fetch block data
@@ -127,11 +145,12 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       blockEntity.timestamp = new Date(momentPrev.toNumber());
       blockEntity.extrinsicRoot = blockData.extrinsicsRoot.toString();
       blockEntity.networkType = network;
-      await this.blockEntityRepository.save(blockEntity);
-
+     await this.blockEntityRepository.save(blockEntity);
+     
       await this.processExtrinsics(blockData.extrinsics, blockEntity, network);
-    } catch (error) {
-      this.logger.error(error);
+   } catch (error) {
+     this.logger.error(error.toString());
+     this.init();
     }
   }
 
@@ -363,8 +382,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         }
       });
     } catch (error) {
-      this.logger.error(error);
-      process.exit(1);
+      this.logger.error(error.toString());
+      this.init();
     }
   }
 
