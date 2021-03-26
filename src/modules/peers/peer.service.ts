@@ -2,14 +2,14 @@ import {Injectable, Logger, BadRequestException} from '@nestjs/common';
 import {ConfigService} from '../config/config.service';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import Axios from 'axios';
-import {stringToU8a} from '@polkadot/util'
+import {formatBalance, stringToU8a} from '@polkadot/util';
 
 @Injectable()
 export class PeerService {
   public logger = new Logger(PeerService.name);
 
-  private networkParams: { api: ApiPromise; type: string }[] = [];
-  
+  private networkParams: {api: ApiPromise; type: string}[] = [];
+
   private networksParsed: any;
 
   public constructor(private readonly configService: ConfigService) {
@@ -84,18 +84,35 @@ export class PeerService {
   }
 
   /**
-   * Get Treasury balance 
+   * Get Treasury balance
    * @param network network string
-   * @returns Balance 
+   * @returns Balance
    */
-  public async treasuryBalance(network: string): Promise<any>{
+  public async treasuryBalance(network: string): Promise<any> {
     if (this.networksParsed.find((item) => network === item.NETWORK) === undefined) {
       throw new BadRequestException(`Invalid network type.`);
     }
     const networkParam = this.networkParams.find((item) => item.type === network);
     const treasuryAccount = stringToU8a('modlpy/trsry'.padEnd(32, '\0'));
-    const {data: {free: balance}} = await networkParam.api.query.system.account(treasuryAccount);
-    const formatedBalance = +balance.toString() / 10 ** 15;
-    return formatedBalance
+    const {
+      data: {free: balance},
+    } = await networkParam.api.query.system.account(treasuryAccount);
+    const formatedBalance = formatBalance(balance, {decimals: 15});
+    return formatedBalance;
+  }
+
+  /**
+   * Get total issuance
+   * @param network network string
+   * @returns total issuance
+   */
+  public async totalIssuance(network: string): Promise<any> {
+    if (this.networksParsed.find((item) => network === item.NETWORK) === undefined) {
+      throw new BadRequestException(`Invalid network type.`);
+    }
+    const networkParam = this.networkParams.find((item) => item.type === network);
+    const totalIssuance = await networkParam.api.query.balances.totalIssuance();
+    const formatedValue = formatBalance(totalIssuance, {decimals: 15});
+    return formatedValue;
   }
 }

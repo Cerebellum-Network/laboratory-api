@@ -26,4 +26,9 @@ export class PeerController {
   public  treasuryBalance(@Param('network') network: string): Promise<any>{
     return this.peerService.treasuryBalance(network);
   }
+
+  @Get('/total-issuance/:network')
+  public totalIssuance(@Param('network') network: string): Promise<any>{
+    return this.peerService.totalIssuance(network);
+  }
 }
