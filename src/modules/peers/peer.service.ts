@@ -2,15 +2,37 @@ import {Injectable, Logger, BadRequestException} from '@nestjs/common';
 import {ConfigService} from '../config/config.service';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import Axios from 'axios';
-import {Network} from './network.enum';
+import {formatBalance, stringToU8a} from '@polkadot/util';
 
 @Injectable()
 export class PeerService {
   public logger = new Logger(PeerService.name);
 
-  private api: ApiPromise;
+  private networkParams: {api: ApiPromise; type: string}[] = [];
 
-  public constructor(private readonly configService: ConfigService) {}
+  private networksParsed: any;
+
+  public constructor(private readonly configService: ConfigService) {
+    this.networksParsed = JSON.parse(this.configService.get('NETWORKS'));
+    this.init();
+  }
+
+  private init(): any {
+    this.networksParsed.forEach(async (network) => {
+      const api = await this.initProvider(network.URL);
+      this.networkParams.push({api, type: network.NETWORK});
+    });
+  }
+
+  public async initProvider(url: string): Promise<ApiPromise> {
+    const provider = new WsProvider(url);
+    const api = await ApiPromise.create({provider});
+    await api.isReady;
+    const chain = await api.rpc.system.chain();
+    this.logger.log(`Connected to ${chain}`);
+
+    return api;
+  }
 
   /**
    * Fetch the list of peer nodes connected to the network
@@ -19,30 +41,14 @@ export class PeerService {
    */
   public async fetch(network: string): Promise<any> {
     this.logger.log(`About to fetch node details`);
-    let networkWsUrl;
-    switch (network) {
-      case Network.TESTNET:
-        networkWsUrl = this.configService.get('TESTNET_WS_URL');
-        break;
-      case Network.DEV:
-        networkWsUrl = this.configService.get('DEV_WS_URL');
-        break;
 
-      case Network.DEV1:
-        networkWsUrl = this.configService.get('DEV1_WS_URL');
-        break;
-      default:
-        throw new BadRequestException('Failed to detect the network type.');
-        break;
+    if (this.networksParsed.find((item) => network === item.NETWORK) === undefined) {
+      throw new BadRequestException(`Invalid network type.`);
     }
+    const networkParam = this.networkParams.find((item) => item.type === network);
 
-    const wsProvider = new WsProvider(networkWsUrl);
-    this.api = await ApiPromise.create({provider: wsProvider});
-    await this.api.isReady;
-    const chain = await this.api.rpc.system.chain();
-    this.logger.log(`Connected to ${chain}`);
-    const {connectedPeers} = await this.api.rpc.system.networkState();
-    const peerDetails = await this.api.rpc.system.peers();
+    const {connectedPeers} = await networkParam.api.rpc.system.networkState();
+    const peerDetails = await networkParam.api.rpc.system.peers();
     const data = [];
     for await (const peer of peerDetails) {
       for await (const [key, value] of connectedPeers) {
@@ -75,5 +81,38 @@ export class PeerService {
   public async geoLocation(ip: string): Promise<any> {
     const response = await (await Axios.get(`http://ipwhois.app/json/${ip}?objects=country,city`)).data;
     return response;
+  }
+
+  /**
+   * Get Treasury balance
+   * @param network network string
+   * @returns Balance
+   */
+  public async treasuryBalance(network: string): Promise<any> {
+    if (this.networksParsed.find((item) => network === item.NETWORK) === undefined) {
+      throw new BadRequestException(`Invalid network type.`);
+    }
+    const networkParam = this.networkParams.find((item) => item.type === network);
+    const treasuryAccount = stringToU8a('modlpy/trsry'.padEnd(32, '\0'));
+    const {
+      data: {free: balance},
+    } = await networkParam.api.query.system.account(treasuryAccount);
+    const formatedBalance = formatBalance(balance, {decimals: 15});
+    return formatedBalance;
+  }
+
+  /**
+   * Get total issuance
+   * @param network network string
+   * @returns total issuance
+   */
+  public async totalIssuance(network: string): Promise<any> {
+    if (this.networksParsed.find((item) => network === item.NETWORK) === undefined) {
+      throw new BadRequestException(`Invalid network type.`);
+    }
+    const networkParam = this.networkParams.find((item) => item.type === network);
+    const totalIssuance = await networkParam.api.query.balances.totalIssuance();
+    const formatedValue = formatBalance(totalIssuance, {decimals: 15});
+    return formatedValue;
   }
 }

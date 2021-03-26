@@ -42,7 +42,7 @@ export interface ISanitizedArgs {
 export class BlockScannerService implements BlockScannerServiceInterface {
   public logger = new Logger(BlockScannerService.name);
 
-  private api: ApiPromise;
+  private networkApis: {api: ApiPromise; type: string}[] = [];
 
   public constructor(
     @InjectRepository(BlockEntity)
@@ -52,63 +52,90 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     private readonly configService: ConfigService,
   ) {}
 
-  public async startScanning(): Promise<void> {
+  public async init(): Promise<any> {
     this.logger.debug('About to scan the network');
-
-    await this.init();
-    await this.processOldBlock();
+    try {
+      const networks = JSON.parse(this.configService.get('NETWORKS'));
+      await this.initNetwork(networks);
+      this.startScanning();
+    } catch (error) {
+      this.logger.error(error.toString());
+      this.init();
+    }
+  
   }
 
-  public async init(): Promise<ApiPromise> {
-    const networkWsUrl = this.configService.get('NETWORK_WS_URL');
+  public startScanning() {
+    this.logger.log(`About to start scanning network`);
+    this.networkApis.forEach((item) => {
+      this.processOldBlock(item.api, item.type);
+    });
+  }
 
-    const wsProvider = new WsProvider(networkWsUrl);
-    this.api = await ApiPromise.create({provider: wsProvider});
-    await this.api.isReady;
-    const chain = await this.api.rpc.system.chain();
-    this.logger.log(`Connected to ${chain}`);
-
-    return this.api;
+  public async initNetwork(networks: any) {
+    this.logger.debug('Init Network');
+    for (const network of networks) {
+      const provider = new WsProvider(network.URL);
+      const api = await ApiPromise.create({provider});
+      await api.isReady;
+      const chain = await api.rpc.system.chain();
+      this.logger.log(`Connected to ${chain}`);
+      this.networkApis.push({api, type: network.NETWORK});
+    }
   }
 
   // Process the blocks from where it has been leftout to current block
-  public async processOldBlock(): Promise<void> {
-    const query = this.blockEntityRepository
+  public async processOldBlock(api: any, network: string): Promise<void> {
+    try {
+      const query = this.blockEntityRepository
       .createQueryBuilder('blocks')
-      .select('MAX(CAST( blocks.blockNumber  AS INT))', 'blockNumber');
-
+      .select('MAX(CAST( blocks.blockNumber  AS INT))', 'blockNumber')
+      .where('blocks.networkType = :type', {type: network});
     const syncedBlock = await query.getRawOne();
-    let latestBlock = await this.api.rpc.chain.getHeader();
+    let latestBlock = await api.rpc.chain.getHeader();
     const start = Number(syncedBlock.blockNumber);
     for (let i: number = start + 1; i <= Number(latestBlock.number); i += 1) {
-      await this.scanChain(i);
-      latestBlock = await this.api.rpc.chain.getHeader();
+      await this.scanChain(i, api, network);
+      latestBlock = await api.rpc.chain.getHeader();
     }
-    this.processBlock();
+    this.processBlock(api, network);
+    } catch (error) {
+      this.logger.error(error.toString());
+      this.init();
+    }
+    
   }
 
   // Process the current blocks.
-  public async processBlock(): Promise<void> {
-    const query = this.blockEntityRepository
+  public async processBlock(api: any, network: string): Promise<void> {
+    try {
+      const query = this.blockEntityRepository
       .createQueryBuilder('blocks')
-      .select('MAX(CAST( blocks.blockNumber AS INT))', 'blockNumber');
+      .select('MAX(CAST( blocks.blockNumber AS INT))', 'blockNumber')
+      .where('blocks.networkType = :type', {type: network});
+
     const syncedBlock = await query.getRawOne();
-    const latestBlock = await this.api.rpc.chain.getHeader();
+    const latestBlock = await api.rpc.chain.getHeader();
     if (Number(syncedBlock.blockNumber) !== Number(latestBlock.number)) {
-      await this.processOldBlock();
+      await this.processOldBlock(api, network);
     } else {
-      this.api.derive.chain.subscribeNewHeads(async (header) => {
-        await this.scanChain(Number(header.number));
+      api.derive.chain.subscribeNewHeads(async (header) => {
+        await this.scanChain(Number(header.number), api, network);
       });
     }
+    } catch (error) {
+      this.logger.error(error.toString());
+      this.init();
+    }
+    
   }
 
-  public async scanChain(blockNumber: number): Promise<any> {
-    try {
-      const blockHash: any = await this.api.rpc.chain.getBlockHash(blockNumber);
-      const momentPrev = await this.api.query.timestamp.now.at(blockHash);
+  public async scanChain(blockNumber: number, api: any, network: string): Promise<any> {
+   try {
+      const blockHash: any = await api.rpc.chain.getBlockHash(blockNumber);
+      const momentPrev = await api.query.timestamp.now.at(blockHash);
       // Fetch block data
-      const blockData = await this.fetchBlock(blockHash);
+      const blockData = await this.fetchBlock(blockHash, api);
       const blockEntity = new BlockEntity();
       blockEntity.authorPublicKey = blockData.authorId?.toString();
       blockEntity.stateRoot = blockData.stateRoot.toString();
@@ -117,19 +144,26 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       blockEntity.blockHash = blockHash.toString();
       blockEntity.timestamp = new Date(momentPrev.toNumber());
       blockEntity.extrinsicRoot = blockData.extrinsicsRoot.toString();
-      await this.blockEntityRepository.save(blockEntity);
-
-      await this.processExtrinsics(blockData.extrinsics, blockEntity);
-    } catch (error) {
-      this.logger.error(error);
+      blockEntity.networkType = network;
+     await this.blockEntityRepository.save(blockEntity);
+     
+      await this.processExtrinsics(blockData.extrinsics, blockEntity, network);
+   } catch (error) {
+     this.logger.error(error.toString());
+     this.init();
     }
   }
 
-  public async getAccountBlocks(accountId: string, offset: number, limit: number): Promise<BlocksDataDto> {
+  public async getAccountBlocks(
+    accountId: string,
+    offset: number,
+    limit: number,
+    network: string,
+  ): Promise<BlocksDataDto> {
     this.logger.debug('About to fetch the Block');
 
     const [result, count] = await this.blockEntityRepository.findAndCount({
-      where: {authorPublicKey: accountId},
+      where: {authorPublicKey: accountId, networkType: network},
       take: limit,
       skip: offset,
     });
@@ -140,51 +174,60 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     return new BlocksDataDto(data, count);
   }
 
-  public async getTransactions(accountId: string, offset: number, limit: number): Promise<TransactionsDataDto> {
+  public async getTransactions(
+    accountId: string,
+    offset: number,
+    limit: number,
+    network: string,
+  ): Promise<TransactionsDataDto> {
     this.logger.debug('About to fetch the transaction');
-    const balance = await this.getBalance(accountId);
+    const balance = await this.getBalance(accountId, network);
     const [result, count] = await this.transactionEntityRepository.findAndCount({
-      where: {senderId: accountId},
+      where: {
+        senderId: accountId,
+        networkType: network,
+      },
       take: limit,
       skip: offset,
     });
+
     const data = await result.map((transaction) => toTransactionDto(transaction));
 
     return new TransactionsDataDto(data, count, balance);
   }
 
-  public async getLatestBlock(): Promise<LatestBlockDto> {
+  public async getLatestBlock(network: string): Promise<LatestBlockDto> {
     this.logger.debug(`About to get latest block`);
     const query = this.blockEntityRepository
       .createQueryBuilder('blocks')
-      .select('MAX(CAST( blocks.blockNumber AS INT))', 'blockNumber');
+      .select('MAX(CAST( blocks.blockNumber AS INT))', 'blockNumber')
+      .where('blocks.networkType = :type', {type: network});
+
     const syncedBlock = await query.getRawOne();
     return new LatestBlockDto(syncedBlock.blockNumber);
   }
 
-  public async getBalance(address: string): Promise<any> {
+  public async getBalance(address: string, network: string): Promise<any> {
     this.logger.debug(`About to get balance for: ${address}`);
+    const networkParam = this.networkApis.find((item) => item.type === network);
     const {
       data: {free: balance},
-    } = await this.api.query.system.account(address);
+    } = await networkParam.api.query.system.account(address);
     // FIXME: Fix the decimal position once it is fixed in chain
     // const decimal = await this.api.registry.chainDecimals;
     const result = await formatBalance(balance, {decimals: 15});
     return result;
   }
 
-  private async fetchBlock(hash: BlockHash): Promise<any> {
-    const [{block}, events] = await Promise.all([
-      this.api.rpc.chain.getBlock(hash),
-      this.api.query.system.events.at(hash),
-    ]);
+  private async fetchBlock(hash: BlockHash, api: any): Promise<any> {
+    const [{block}, events] = await Promise.all([api.rpc.chain.getBlock(hash), api.query.system.events.at(hash)]);
 
     const {parentHash, number, stateRoot, extrinsicsRoot} = block.header;
 
     const onInitialize = {events: [] as ISanitizedEvent[]};
     const onFinalize = {events: [] as ISanitizedEvent[]};
 
-    const header = await this.api.derive.chain.getHeader(hash);
+    const header = await api.derive.chain.getHeader(hash);
     const authorId = header?.author;
 
     const logs = block.header.digest.logs.map((log) => {
@@ -298,7 +341,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     };
   }
 
-  private processExtrinsics(extrinsic: any, block: any): any {
+  private processExtrinsics(extrinsic: any, block: any, network: string): any {
     try {
       const events = [];
       const transferMethods = [
@@ -332,14 +375,15 @@ export class BlockScannerService implements BlockScannerServiceInterface {
           transactionEntity.method = txn.method;
           transactionEntity.timestamp = block.timestamp;
           transactionEntity.block = block;
+          transactionEntity.networkType = network;
           await this.transactionEntityRepository.save(transactionEntity);
         } else {
-          this.logger.log(`No Transaction for block: ${block.blockNumber}\n\n`);
+          this.logger.debug(`No Transaction for block: ${block.blockNumber}\n\n`);
         }
       });
     } catch (error) {
-      this.logger.error(error);
-      process.exit(1);
+      this.logger.error(error.toString());
+      this.init();
     }
   }
 
