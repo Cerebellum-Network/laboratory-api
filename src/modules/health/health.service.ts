@@ -1,7 +1,12 @@
+import {ValidatorEntity} from './entities/validator.entity';
 import {Injectable, Logger} from '@nestjs/common';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import {ConfigService} from '../config/config.service';
 import {BlockStatusDto} from './dto/block-status.dto';
+import {InjectRepository} from '@nestjs/typeorm';
+import {Repository} from 'typeorm';
+import {validatorStatus} from './validatorStatus.enum';
+import {Cron} from '@nestjs/schedule';
 
 @Injectable()
 export class HealthService {
@@ -11,7 +16,11 @@ export class HealthService {
 
   private blockDifference = Number(this.configService.get('BLOCK_DIFFERENCE'));
 
-  public constructor(private readonly configService: ConfigService) {
+  public constructor(
+    private readonly configService: ConfigService,
+    @InjectRepository(ValidatorEntity)
+    private readonly validatorEntityRepository: Repository<ValidatorEntity>,
+  ) {
     this.init();
   }
 
@@ -66,6 +75,51 @@ export class HealthService {
       return true;
     }
     return false;
+  }
+
+  @Cron('1/1 * * * *')
+  public async validatorSlashed(): Promise<any> {
+    this.logger.log('iamexecuting');
+    const wsProvider = new WsProvider('wss://kusama-rpc.polkadot.io');
+    const api = await ApiPromise.create({provider: wsProvider});
+    await api.isReady;
+    const currentEra = await api.query.staking.currentEra();
+    const result = await api.query.staking.unappliedSlashes(currentEra.toString());
+    // const result = await api.query.staking.unappliedSlashes(2034);
+    if (result.length === 0) {
+      this.logger.debug(`No validator got slashed in ${currentEra.toString()}`);
+    } else {
+      const slashedValidator: string[] = [];
+      result.forEach((element) => {
+        slashedValidator.push(element.validator.toString());
+      });
+      const validatorEntity = new ValidatorEntity();
+      validatorEntity.era = currentEra.toString();
+      validatorEntity.status = validatorStatus.new;
+      validatorEntity.validator = slashedValidator;
+      await this.validatorEntityRepository.save(validatorEntity);
+      return result;
+    }
+    return result;
+  }
+
+  public async nodeDropped(): Promise<any> {
+    const validator = await this.validatorEntityRepository.find({status: validatorStatus.new});
+    await this.validatorEntityRepository
+      .createQueryBuilder()
+      .update(ValidatorEntity)
+      .set({status: validatorStatus.notified})
+      .where('status =:status', {status: validatorStatus.new})
+      .execute();
+    if (validator.length === 0) {
+      return false;
+    }
+    return true;
+  }
+
+  public async nodeDroppedStatus(): Promise<any> {
+    const validator = await this.validatorEntityRepository.find({take: 10});
+    return validator;
   }
 
   private async blockNumber(): Promise<any> {
