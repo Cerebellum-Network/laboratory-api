@@ -1,4 +1,4 @@
 export enum validatorStatus {
-  new = "NEW",
-  notified = "NOTIFIED",
+  NEW = "NEW",
+  NOTIFIED = "NOTIFIED",
 }

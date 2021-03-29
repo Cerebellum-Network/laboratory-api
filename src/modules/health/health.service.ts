@@ -82,11 +82,8 @@ export class HealthService {
    */
   @Cron('40 * * * *')
   public async validatorSlashed(): Promise<any> {
-    const wsProvider = new WsProvider('wss://kusama-rpc.polkadot.io');
-    const api = await ApiPromise.create({provider: wsProvider});
-    await api.isReady;
-    const currentEra = await api.query.staking.currentEra();
-    const result = await api.query.staking.unappliedSlashes(currentEra.toString());
+    const currentEra = await this.api.query.staking.currentEra();
+    const result = await this.api.query.staking.unappliedSlashes(currentEra.toString());
     if (result.length === 0) {
       this.logger.debug(`No validator got slashed in ${currentEra.toString()}`);
     } else {
@@ -96,7 +93,7 @@ export class HealthService {
       });
       const validatorEntity = new ValidatorEntity();
       validatorEntity.era = currentEra.toString();
-      validatorEntity.status = validatorStatus.new;
+      validatorEntity.status = validatorStatus.NEW;
       validatorEntity.validator = slashedValidator;
       await this.validatorEntityRepository.save(validatorEntity);
       return result;
@@ -109,12 +106,12 @@ export class HealthService {
    * @returns notified status
    */
   public async nodeDropped(): Promise<any> {
-    const validator = await this.validatorEntityRepository.find({status: validatorStatus.new});
+    const validator = await this.validatorEntityRepository.find({status: validatorStatus.NEW});
     await this.validatorEntityRepository
       .createQueryBuilder()
       .update(ValidatorEntity)
-      .set({status: validatorStatus.notified})
-      .where('status =:status', {status: validatorStatus.new})
+      .set({status: validatorStatus.NOTIFIED})
+      .where('status =:status', {status: validatorStatus.NEW})
       .execute();
     if (validator.length === 0) {
       return false;
