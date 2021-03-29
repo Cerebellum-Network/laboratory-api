@@ -77,15 +77,16 @@ export class HealthService {
     return false;
   }
 
-  @Cron('1/1 * * * *')
+  /**
+   * Run cron job At minute 40 to check for slashed validator node. 
+   */
+  @Cron('40 * * * *')
   public async validatorSlashed(): Promise<any> {
-    this.logger.log('iamexecuting');
     const wsProvider = new WsProvider('wss://kusama-rpc.polkadot.io');
     const api = await ApiPromise.create({provider: wsProvider});
     await api.isReady;
     const currentEra = await api.query.staking.currentEra();
     const result = await api.query.staking.unappliedSlashes(currentEra.toString());
-    // const result = await api.query.staking.unappliedSlashes(2034);
     if (result.length === 0) {
       this.logger.debug(`No validator got slashed in ${currentEra.toString()}`);
     } else {
@@ -103,6 +104,10 @@ export class HealthService {
     return result;
   }
 
+  /**
+   * Node dropped.
+   * @returns notified status
+   */
   public async nodeDropped(): Promise<any> {
     const validator = await this.validatorEntityRepository.find({status: validatorStatus.new});
     await this.validatorEntityRepository
@@ -117,6 +122,10 @@ export class HealthService {
     return true;
   }
 
+  /**
+   * Node dropped status
+   * @returns slashed validator 
+   */
   public async nodeDroppedStatus(): Promise<any> {
     const validator = await this.validatorEntityRepository.find({take: 10});
     return validator;
