@@ -55,4 +55,28 @@ export class HealthController {
     }
     res.status(HttpStatus.NOT_FOUND).send();
   }
+
+  @Get('node-dropped')
+  @ApiResponse({status: 204, description: 'Validator node is healthy.'})
+  @ApiNotFoundResponse({description: 'Validator node is unhealthy.'})
+  public async nodeDropped(@Res() res: Response): Promise<any> {
+    const result = await this.healthService.nodeDropped();
+    if (result) {
+      res.status(HttpStatus.NO_CONTENT).send();
+    }
+    res.status(HttpStatus.NOT_FOUND).send();
+  }
+
+  @Get('node-dropped-status')
+  @ApiNotFoundResponse({description: 'Validator node is unhealthy.'})
+  public nodeDroppedStatus(): Promise<any> {
+    return this.healthService.nodeDroppedStatus();
+  }
+
+  @Get('validator')
+  @ApiResponse({status: 204, description: 'Block production is healthy.'})
+  @ApiNotFoundResponse({description: 'Block production is unhealthy.'})
+  public validator(): Promise<any> {
+    return this.healthService.validatorSlashed();
+  }
 }
