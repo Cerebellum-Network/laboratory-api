@@ -122,7 +122,8 @@ export class PeerService {
    */
   public async ddcMetric(): Promise<any> {
     const ddcMetricUrl = await this.configService.get('DDC_METRIC_URL');
-    const response = await (await Axios.get(ddcMetricUrl)).data;
+    const response = await (await Axios.get(`${ddcMetricUrl}/network/capacity`)).data;
+
     return response;
   }
 }
