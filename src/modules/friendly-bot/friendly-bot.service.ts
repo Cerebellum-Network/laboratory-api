@@ -60,13 +60,16 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
 
   public async issueToken(destination: string, network: string): Promise<AssetDto> {
     // formatBalance(balance, {decimals: Number(decimal)});
+    if (network === 'MAINNET') {
+      throw new BadRequestException(`Cant process this request for Mainnet.`)
+    }
     if (this.networksParsed.find((item) => network === item.NETWORK) === undefined) {
       throw new BadRequestException(`Invalid network type.`);
     }
     const networkParam = this.networkParams.find((item) => item.type === network);
     const {balance} = await this.getBalance(destination, network);
     const initialBal = +balance / 10 ** 15;
-    this.logger.log(`Initial Balance: ${initialBal}`);
+    this.logger.debug(`Initial Balance: ${initialBal}`);
     const value = await this.configService.get('NUMBER_OF_TOKENS_TO_SEND');
     const maxBalance = Number(this.configService.get('MAX_BALANCE'));
     const maxRequestPerDay = Number(await this.configService.get('REQUEST_PER_DAY'));
