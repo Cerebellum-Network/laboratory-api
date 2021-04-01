@@ -121,7 +121,8 @@ export class PeerService {
    * @returns ddc metrics
    */
   public async ddcMetric(): Promise<any> {
-    const response = await (await Axios.get(`https://node-2.ddc.dev.cere.network/api/rest/network/capacity`)).data;
+    const ddcMetricUrl = await this.configService.get('DDC_METRIC_URL');
+    const response = await (await Axios.get(ddcMetricUrl)).data;
     return response;
   }
 }
