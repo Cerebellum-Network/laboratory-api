@@ -1,7 +1,12 @@
+import {ValidatorEntity} from './entities/validator.entity';
 import {Injectable, Logger} from '@nestjs/common';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import {ConfigService} from '../config/config.service';
 import {BlockStatusDto} from './dto/block-status.dto';
+import {InjectRepository} from '@nestjs/typeorm';
+import {Repository} from 'typeorm';
+import {validatorStatus} from './validatorStatus.enum';
+import {Cron} from '@nestjs/schedule';
 
 @Injectable()
 export class HealthService {
@@ -11,7 +16,11 @@ export class HealthService {
 
   private blockDifference = Number(this.configService.get('BLOCK_DIFFERENCE'));
 
-  public constructor(private readonly configService: ConfigService) {
+  public constructor(
+    private readonly configService: ConfigService,
+    @InjectRepository(ValidatorEntity)
+    private readonly validatorEntityRepository: Repository<ValidatorEntity>,
+  ) {
     this.init();
   }
 
@@ -66,6 +75,57 @@ export class HealthService {
       return true;
     }
     return false;
+  }
+
+  /**
+   * Run cron job At minute 40 to check for slashed validator node. 
+   */
+  @Cron('40 * * * *')
+  public async validatorSlashed(): Promise<any> {
+    const currentEra = await this.api.query.staking.currentEra();
+    const result = await this.api.query.staking.unappliedSlashes(currentEra.toString());
+    if (result.length === 0) {
+      this.logger.debug(`No validator got slashed in ${currentEra.toString()}`);
+    } else {
+      const slashedValidator: string[] = [];
+      result.forEach((element) => {
+        slashedValidator.push(element.validator.toString());
+      });
+      const validatorEntity = new ValidatorEntity();
+      validatorEntity.era = currentEra.toString();
+      validatorEntity.status = validatorStatus.NEW;
+      validatorEntity.validator = slashedValidator;
+      await this.validatorEntityRepository.save(validatorEntity);
+      return result;
+    }
+    return result;
+  }
+
+  /**
+   * Node dropped.
+   * @returns notified status
+   */
+  public async nodeDropped(): Promise<any> {
+    const validator = await this.validatorEntityRepository.find({status: validatorStatus.NEW});
+    await this.validatorEntityRepository
+      .createQueryBuilder()
+      .update(ValidatorEntity)
+      .set({status: validatorStatus.NOTIFIED})
+      .where('status =:status', {status: validatorStatus.NEW})
+      .execute();
+    if (validator.length === 0) {
+      return false;
+    }
+    return true;
+  }
+
+  /**
+   * Node dropped status
+   * @returns slashed validator 
+   */
+  public async nodeDroppedStatus(): Promise<any> {
+    const validator = await this.validatorEntityRepository.find({take: 10});
+    return validator;
   }
 
   private async blockNumber(): Promise<any> {

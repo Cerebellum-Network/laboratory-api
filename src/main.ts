@@ -13,7 +13,37 @@ import {NestExpressApplication} from '@nestjs/platform-express';
 async function bootstrap() {
   const servicePrefix = 'laboratory';
 
-  const app = await NestFactory.create<NestExpressApplication>(AppModule, {bodyParser: false});
+  const logLevel = process.env.LOG_LEVEL;
+  let logLevelParams = [];
+  switch(logLevel) {
+    case 'debug': {
+      logLevelParams = ['debug', 'log', 'warn', 'error'];
+      break;
+    }
+    case 'info': {
+      logLevelParams = ['log', 'warn', 'error'];
+      break;
+    }
+    case 'warn': {
+      logLevelParams = ['warn', 'error'];
+      break;
+    }
+    case 'error': {
+      logLevelParams = ['error'];
+      break;
+    }
+    default: {
+      logLevelParams = ['warn', 'error'];
+    }
+  }
+
+  const app = await NestFactory.create<NestExpressApplication>(
+    AppModule,
+    {
+      bodyParser: false,
+      logger: logLevelParams,
+    },
+  );
   app.use(bodyParser.json());
 
   app.set('trust proxy', 1);
@@ -23,8 +53,8 @@ async function bootstrap() {
   app.enableCors();
 
   const options = new DocumentBuilder()
-    .setTitle('Block Scanner Service')
-    .setDescription('The Block Scanner Service API description')
+    .setTitle('Laboratory API')
+    .setDescription('Laboratory API description')
     .setVersion(version)
     .addServer(`/${servicePrefix}`)
     .build();
