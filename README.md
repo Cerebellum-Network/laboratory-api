@@ -6,7 +6,7 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 
 ## Release notes
 ### vNext
-* 
+* Fixed transfer tx processing script
 
 ### v1.5.0
 * Added API to fetch total issued CERE tokens.

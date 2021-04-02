@@ -111,11 +111,20 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     return new BalanceDto(balance, decimal);
   }
 
-  private async transfer(address: string, value: string, network: string): Promise<Hash> {
+  private async transfer(address: string, value: string, network: string): Promise<string> {
     this.logger.debug(`About to transfer assets to ${address}`);
     const networkParam = this.networkParams.find((item) => item.type === network);
     const {nonce} = await networkParam.api.query.system.account(networkParam.faucet.address);
 
-    return networkParam.api.tx.balances.transfer(address, value).signAndSend(networkParam.faucet, {nonce});
+    return new Promise((res, rej) => {
+      networkParam.api.tx.balances.transfer(address, value).signAndSend(networkParam.faucet, {nonce}, ({status}) => {
+        if (status.isInBlock) {
+          this.logger.log(`Included in ${status.asInBlock}`);
+        } else if (status.isFinalized) {
+          res(status.asFinalized.toHex());
+        }
+      })
+        .catch((err) => rej(err));
+    });
   }
 }
