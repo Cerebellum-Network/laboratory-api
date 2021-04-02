@@ -112,7 +112,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
   }
 
   private async transfer(address: string, value: string, network: string): Promise<string> {
-    this.logger.debug(`About to transfer assets to ${address}`);
+    this.logger.log(`About to transfer ${value} native assets to ${address}`);
     const networkParam = this.networkParams.find((item) => item.type === network);
     const {nonce} = await networkParam.api.query.system.account(networkParam.faucet.address);
 

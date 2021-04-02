@@ -8,6 +8,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### vNext
 * 
 
+### v1.5.2
+* Added log for faucet
+
 ### v1.5.1
 * Fixed transfer tx processing script
 
