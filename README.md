@@ -6,6 +6,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 
 ## Release notes
 ### vNext
+* 
+
+### v1.5.0
 * Added API to fetch total issued CERE tokens.
 * Added API to fetch DDC metrics.
 
