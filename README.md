@@ -6,6 +6,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 
 ## Release notes
 ### vNext
+* 
+
+### v1.5.1
 * Fixed transfer tx processing script
 
 ### v1.5.0
