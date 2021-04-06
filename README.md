@@ -8,6 +8,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### vNext
 * 
 
+### v1.5.3
+* Updated ENV URL params
+
 ### v1.5.2
 * Added log for faucet
 
