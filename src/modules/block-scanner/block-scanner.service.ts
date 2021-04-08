@@ -76,7 +76,19 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     this.logger.debug('Init Network');
     for (const network of networks) {
       const provider = new WsProvider(network.URL);
-      const api = await ApiPromise.create({provider});
+      let api;
+      if (network.NETWORK === 'TESTNET_DEV') {
+         api = await ApiPromise.create({
+          provider, types: {
+            "ChainId": "u8",
+            "ResourceId": "[u8; 32]",
+            "TokenId": "U256"
+        }});
+      } else {
+         api = await ApiPromise.create({
+          provider});
+      }
+      
       await api.isReady;
       const chain = await api.rpc.system.chain();
       this.logger.log(`Connected to ${chain}`);

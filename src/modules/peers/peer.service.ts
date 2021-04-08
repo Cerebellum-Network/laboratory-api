@@ -19,14 +19,24 @@ export class PeerService {
 
   private init(): any {
     this.networksParsed.forEach(async (network) => {
-      const api = await this.initProvider(network.URL);
+      const api = await this.initProvider(network.URL, network.NETWORK);
       this.networkParams.push({api, type: network.NETWORK});
     });
   }
 
-  public async initProvider(url: string): Promise<ApiPromise> {
+  public async initProvider(url: string, network: string): Promise<ApiPromise> {
     const provider = new WsProvider(url);
-    const api = await ApiPromise.create({provider});
+    let api;
+    if (network === 'TESTNET_DEV') {
+       api = await ApiPromise.create({
+        provider, types: {
+          "ChainId": "u8",
+          "ResourceId": "[u8; 32]",
+          "TokenId": "U256"
+      }});
+    } else {
+       api = await ApiPromise.create({provider});
+    }
     await api.isReady;
     const chain = await api.rpc.system.chain();
     this.logger.log(`Connected to ${chain}`);
