@@ -17,6 +17,7 @@ import {toTransactionDto} from './mapper/transaction.mapper';
 import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
+import config from '../shared/constant/config';
 
 export interface ISanitizedEvent {
   method: string;
@@ -76,18 +77,10 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     this.logger.debug('Init Network');
     for (const network of networks) {
       const provider = new WsProvider(network.URL);
-      let api;
-      if (network.NETWORK === 'TESTNET_DEV') {
-         api = await ApiPromise.create({
-          provider, types: {
-            "ChainId": "u8",
-            "ResourceId": "[u8; 32]",
-            "TokenId": "U256"
-        }});
-      } else {
-         api = await ApiPromise.create({
-          provider});
-      }
+        const api = await ApiPromise.create({
+          provider,
+          types: config,
+        });
       
       await api.isReady;
       const chain = await api.rpc.system.chain();

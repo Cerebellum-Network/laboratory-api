@@ -9,7 +9,7 @@ import moment from 'moment';
 import {PayoutEntity} from './entities/payout.entity';
 import {AssetDto} from './dto/assets.dto';
 import {BalanceDto} from './dto/balance.dto';
-import {Hash} from '@polkadot/types/interfaces';
+import config from '../shared/constant/config';
 
 @Injectable()
 export class FriendlyBotService implements FriendlyBotServiceInterface {
@@ -32,27 +32,19 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
 
   public init(): any {
     this.networksParsed.forEach(async (network) => {
-      const api = await this.initProvider(network.URL, network.NETWORK);
+      const api = await this.initProvider(network.URL);
       const faucet = await this.initFaucet(network.FAUCET, network.PASSWORD);
       this.logger.log(`Faucet Address: ${faucet.address}`);
       this.networkParams.push({api, faucet, type: network.NETWORK});
     });
   }
 
-  public async initProvider(url: string, network: string): Promise<ApiPromise> {
+  public async initProvider(url: string): Promise<ApiPromise> {
     const provider = new WsProvider(url);
-    let api;
-      if (network === 'TESTNET_DEV') {
-         api = await ApiPromise.create({
-          provider, types: {
-            "ChainId": "u8",
-            "ResourceId": "[u8; 32]",
-            "TokenId": "U256"
-        }});
-      } else {
-         api = await ApiPromise.create({
-          provider});
-      }
+       const api = await ApiPromise.create({
+         provider,
+         types: config,
+       });
     await api.isReady;
     const chain = await api.rpc.system.chain();
     this.logger.log(`Connected to ${chain}`);
