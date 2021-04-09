@@ -3,7 +3,7 @@ import {ConfigService} from '../config/config.service';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import Axios from 'axios';
 import {formatBalance, stringToU8a} from '@polkadot/util';
-
+import config from '../shared/constant/config';
 @Injectable()
 export class PeerService {
   public logger = new Logger(PeerService.name);
@@ -26,7 +26,11 @@ export class PeerService {
 
   public async initProvider(url: string): Promise<ApiPromise> {
     const provider = new WsProvider(url);
-    const api = await ApiPromise.create({provider});
+    const api = await ApiPromise.create({
+      provider,
+      types: config
+    });
+
     await api.isReady;
     const chain = await api.rpc.system.chain();
     this.logger.log(`Connected to ${chain}`);
