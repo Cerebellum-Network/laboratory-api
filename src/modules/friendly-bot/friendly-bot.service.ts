@@ -9,7 +9,7 @@ import moment from 'moment';
 import {PayoutEntity} from './entities/payout.entity';
 import {AssetDto} from './dto/assets.dto';
 import {BalanceDto} from './dto/balance.dto';
-import {Hash} from '@polkadot/types/interfaces';
+import config from '../shared/constant/config';
 
 @Injectable()
 export class FriendlyBotService implements FriendlyBotServiceInterface {
@@ -41,7 +41,10 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
 
   public async initProvider(url: string): Promise<ApiPromise> {
     const provider = new WsProvider(url);
-    const api = await ApiPromise.create({provider});
+       const api = await ApiPromise.create({
+         provider,
+         types: config,
+       });
     await api.isReady;
     const chain = await api.rpc.system.chain();
     this.logger.log(`Connected to ${chain}`);
