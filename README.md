@@ -8,6 +8,11 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### vNext
 *
 
+### v1.5.6
+* Added blockHash to tx
+* Added indexes for networkType and blockNumber
+* Code style fixes
+
 ### v1.5.5
 * Updated config for finalization
 
