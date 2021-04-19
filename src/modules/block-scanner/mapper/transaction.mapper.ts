@@ -14,6 +14,7 @@ export const toTransactionDto = (data: TransactionEntity): TransactionDto => {
     events,
     args,
     method,
-    timestamp
+    timestamp,
+    blockHash: data.block ? data.block.blockHash : null,
   };
 };

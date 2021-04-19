@@ -1,11 +1,12 @@
 /* eslint-disable import/no-cycle */
-import {Column, Entity, PrimaryGeneratedColumn} from 'typeorm';
+import {Column, Entity, Index, PrimaryGeneratedColumn} from 'typeorm';
 
 @Entity('blocks')
 export class BlockEntity {
   @PrimaryGeneratedColumn()
   public id: number;
 
+  @Index()
   @Column()
   public blockNumber: string;
 
@@ -22,12 +23,13 @@ export class BlockEntity {
   public extrinsicRoot: string;
 
   @Column({nullable: true})
+  @Index()
   public networkType: string;
 
   @Column({nullable: true})
   public authorPublicKey: string;
 
-  @Column("timestamp without time zone")
+  @Column('timestamp without time zone')
   public timestamp: Date;
 
 }

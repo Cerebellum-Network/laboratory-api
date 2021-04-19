@@ -20,4 +20,6 @@ export class TransactionDto {
   public method: string;
 
   public timestamp: Date;
+
+  public blockHash: string;
 }
