@@ -1,7 +1,7 @@
 export class BlockDto {
   public id: number;
 
-  public blockNumber: string;
+  public blockNumber: number;
 
   public blockHash: string;
 

@@ -7,8 +7,8 @@ export class BlockEntity {
   public id: number;
 
   @Index()
-  @Column()
-  public blockNumber: string;
+  @Column({default: null})
+  public blockNumber: number;
 
   @Column()
   public blockHash: string;
