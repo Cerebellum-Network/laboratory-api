@@ -7,6 +7,7 @@ import {InjectRepository} from '@nestjs/typeorm';
 import {Repository} from 'typeorm';
 import {validatorStatus} from './validatorStatus.enum';
 import {Cron} from '@nestjs/schedule';
+import config from '../shared/constant/config';
 
 @Injectable()
 export class HealthService {
@@ -28,7 +29,7 @@ export class HealthService {
     const networkWsUrl = this.configService.get('NETWORK_WS_URL');
 
     const wsProvider = new WsProvider(networkWsUrl);
-    this.api = await ApiPromise.create({provider: wsProvider});
+    this.api = await ApiPromise.create({provider: wsProvider, types: config});
     await this.api.isReady;
     const chain = await this.api.rpc.system.chain();
     this.logger.log(`Connected to ${chain}`);
