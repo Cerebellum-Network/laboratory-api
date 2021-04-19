@@ -93,22 +93,23 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public async processOldBlock(api: any, network: string): Promise<void> {
     try {
       const query = this.blockEntityRepository
-      .createQueryBuilder('blocks')
-      .select('MAX(CAST( blocks.blockNumber  AS INT))', 'blockNumber')
-      .where('blocks.networkType = :type', {type: network});
-    const syncedBlock = await query.getRawOne();
-    let latestBlock = await api.rpc.chain.getHeader();
-    const start = Number(syncedBlock.blockNumber);
-    for (let i: number = start + 1; i <= Number(latestBlock.number); i += 1) {
-      await this.scanChain(i, api, network);
-      latestBlock = await api.rpc.chain.getHeader();
-    }
-    this.processBlock(api, network);
+        .createQueryBuilder('blocks')
+        .select('MAX(CAST( blocks.blockNumber  AS INT))', 'blockNumber')
+        .where('blocks.networkType = :type', {type: network});
+
+      const syncedBlock = await query.getRawOne();
+      let latestBlock = await api.rpc.chain.getHeader();
+      const start = Number(syncedBlock.blockNumber);
+
+      for (let i: number = start + 1; i <= Number(latestBlock.number); i += 1) {
+        await this.scanChain(i, api, network);
+        latestBlock = await api.rpc.chain.getHeader();
+      }
+      this.processBlock(api, network);
     } catch (error) {
       this.logger.error(error.toString());
       this.init();
     }
-    
   }
 
   // Process the current blocks.
@@ -188,6 +189,9 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     this.logger.debug('About to fetch the transaction');
     const balance = await this.getBalance(accountId, network);
     const [result, count] = await this.transactionEntityRepository.findAndCount({
+      relations: [
+        'block',
+      ],
       where: {
         senderId: accountId,
         networkType: network,
