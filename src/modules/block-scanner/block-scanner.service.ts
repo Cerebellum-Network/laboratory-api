@@ -94,7 +94,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     try {
       const query = this.blockEntityRepository
         .createQueryBuilder('blocks')
-        .select('MAX(CAST( blocks.blockNumber  AS INT))', 'blockNumber')
+        .select('MAX(blocks.blockNumber)', 'blockNumber')
         .where('blocks.networkType = :type', {type: network});
 
       const syncedBlock = await query.getRawOne();
@@ -117,7 +117,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     try {
       const query = this.blockEntityRepository
       .createQueryBuilder('blocks')
-      .select('MAX(CAST( blocks.blockNumber AS INT))', 'blockNumber')
+      .select('MAX(blocks.blockNumber)', 'blockNumber')
       .where('blocks.networkType = :type', {type: network});
 
     const syncedBlock = await query.getRawOne();
@@ -209,7 +209,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     this.logger.debug(`About to get latest block`);
     const query = this.blockEntityRepository
       .createQueryBuilder('blocks')
-      .select('MAX(CAST( blocks.blockNumber AS INT))', 'blockNumber')
+      .select('MAX(blocks.blockNumber)', 'blockNumber')
       .where('blocks.networkType = :type', {type: network});
 
     const syncedBlock = await query.getRawOne();
