@@ -8,6 +8,11 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### vNext
 *
 
+### v1.5.8
+* Removed debug for block scanner
+* Code style fix
+* Updated client config
+
 ### v1.5.7
 * Change blockNumber type.
 
