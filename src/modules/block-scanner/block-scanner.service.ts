@@ -143,19 +143,27 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public async scanChain(blockNumber: number, api: any, network: string): Promise<any> {
     try {
+      const blockEntity = new BlockEntity();
+      blockEntity.blockNumber = blockNumber;
+      blockEntity.timestamp = new Date();
+      blockEntity.networkType = network;
+
+      await this.blockEntityRepository.save(blockEntity);
+
+
       const blockHash: any = await api.rpc.chain.getBlockHash(blockNumber);
       const momentPrev = await api.query.timestamp.now.at(blockHash);
       // Fetch block data
       const blockData = await this.fetchBlock(blockHash, api);
-      const blockEntity = new BlockEntity();
+
       blockEntity.authorPublicKey = blockData.authorId?.toString();
       blockEntity.stateRoot = blockData.stateRoot.toString();
       blockEntity.parentHash = blockData.parentHash.toString();
-      blockEntity.blockNumber = blockData.number.toString();
+
       blockEntity.blockHash = blockHash.toString();
       blockEntity.timestamp = new Date(momentPrev.toNumber());
       blockEntity.extrinsicRoot = blockData.extrinsicsRoot.toString();
-      blockEntity.networkType = network;
+
       await this.blockEntityRepository.save(blockEntity);
 
       await this.processExtrinsics(blockData.extrinsics, blockEntity, network);

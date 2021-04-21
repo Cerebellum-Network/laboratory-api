@@ -8,6 +8,10 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### vNext
 *
 
+### v1.5.9
+* Fixed Block Scanner restart issue
+* Fixed faucet issue
+
 ### v1.5.8
 * Removed debug for block scanner
 * Code style fix
