@@ -7,19 +7,19 @@ export class BlockEntity {
   public id: number;
 
   @Index()
-  @Column({default: null})
+  @Column({nullable: true})
   public blockNumber: number;
 
-  @Column()
+  @Column({nullable: true})
   public blockHash: string;
 
-  @Column()
+  @Column({nullable: true})
   public parentHash: string;
 
-  @Column()
+  @Column({nullable: true})
   public stateRoot: string;
 
-  @Column()
+  @Column({nullable: true})
   public extrinsicRoot: string;
 
   @Column({nullable: true})
@@ -29,7 +29,7 @@ export class BlockEntity {
   @Column({nullable: true})
   public authorPublicKey: string;
 
-  @Column('timestamp without time zone')
+  @Column({type: 'timestamp without time zone', nullable: true})
   public timestamp: Date;
 
 }
