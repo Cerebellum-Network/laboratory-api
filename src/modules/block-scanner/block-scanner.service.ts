@@ -145,6 +145,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     try {
       const blockEntity = new BlockEntity();
       blockEntity.blockNumber = blockNumber;
+      blockEntity.timestamp = new Date();
+      blockEntity.networkType = network;
 
       await this.blockEntityRepository.save(blockEntity);
 
@@ -161,7 +163,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       blockEntity.blockHash = blockHash.toString();
       blockEntity.timestamp = new Date(momentPrev.toNumber());
       blockEntity.extrinsicRoot = blockData.extrinsicsRoot.toString();
-      blockEntity.networkType = network;
 
       await this.blockEntityRepository.save(blockEntity);
 
