@@ -13,8 +13,13 @@ const config = {
     id: 'TokenId',
     metadata: 'Vec<u8>'
   },
-  // Address: 'AccountId',
-  // LookupSource: 'Address'
+};
+
+const submitExtrinsicConfig = {
+  Address: 'AccountId',
+  LookupSource: 'Address',
 };
 
 export default config;
+
+export {submitExtrinsicConfig};
