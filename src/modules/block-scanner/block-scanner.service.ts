@@ -49,6 +49,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   private networkApis: { api: ApiPromise; type: string }[] = [];
 
+  private blockNumber: number;
+
   public constructor(
     @InjectRepository(BlockEntity)
     private readonly blockEntityRepository: Repository<BlockEntity>,
@@ -97,14 +99,19 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   // Process the blocks from where it has been leftout to current block
   public async processOldBlock(api: any, network: string): Promise<void> {
     try {
-      const query = this.blockEntityRepository
-        .createQueryBuilder('blocks')
-        .select('MAX(blocks.blockNumber)', 'blockNumber')
-        .where('blocks.networkType = :type', {type: network});
+      let latestBlock;
+      let start;
+      if (this.blockNumber === undefined) {
+        const query = this.blockEntityRepository
+          .createQueryBuilder('blocks')
+          .select('MAX(blocks.blockNumber)', 'blockNumber')
+          .where('blocks.networkType = :type', {type: network});
 
-      const syncedBlock = await query.getRawOne();
-      let latestBlock = await api.rpc.chain.getHeader();
-      const start = Number(syncedBlock.blockNumber);
+        const syncedBlock = await query.getRawOne();
+        latestBlock = await api.rpc.chain.getHeader();
+        start = Number(syncedBlock.blockNumber);
+        this.blockNumber = start;
+      }
 
       for (let i: number = start + 1; i <= Number(latestBlock.number); i += 1) {
         await this.scanChain(i, api, network);
@@ -120,14 +127,21 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   // Process the current blocks.
   public async processBlock(api: any, network: string): Promise<void> {
     try {
-      const query = this.blockEntityRepository
-        .createQueryBuilder('blocks')
-        .select('MAX(blocks.blockNumber)', 'blockNumber')
-        .where('blocks.networkType = :type', {type: network});
+      let latestBlock;
+      let start;
+      if (this.blockNumber === undefined) {
+        const query = this.blockEntityRepository
+          .createQueryBuilder('blocks')
+          .select('MAX(blocks.blockNumber)', 'blockNumber')
+          .where('blocks.networkType = :type', {type: network});
 
-      const syncedBlock = await query.getRawOne();
-      const latestBlock = await api.rpc.chain.getHeader();
-      if (Number(syncedBlock.blockNumber) !== Number(latestBlock.number)) {
+        const syncedBlock = await query.getRawOne();
+        latestBlock = await api.rpc.chain.getHeader();
+        start = Number(syncedBlock.blockNumber);
+        this.blockNumber = start;
+      }
+
+      if (start !== Number(latestBlock.number)) {
         await this.processOldBlock(api, network);
       } else {
         api.derive.chain.subscribeNewHeads(async (header) => {
@@ -144,6 +158,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public async scanChain(blockNumber: number, api: any, network: string): Promise<any> {
     try {
       const blockEntity = new BlockEntity();
+      this.blockNumber = blockNumber;
       blockEntity.blockNumber = blockNumber;
       blockEntity.timestamp = new Date();
       blockEntity.networkType = network;
