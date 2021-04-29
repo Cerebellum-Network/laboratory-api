@@ -47,9 +47,7 @@ export interface ISanitizedArgs {
 export class BlockScannerService implements BlockScannerServiceInterface {
   public logger = new Logger(BlockScannerService.name);
 
-  private networkApis: {api: ApiPromise; type: string}[] = [];
-
-  private block: {type: string; block: number}[] = [];
+  private networkApis: { api: ApiPromise; block: number; type: string}[] = [];
 
   public constructor(
     @InjectRepository(BlockEntity)
@@ -90,8 +88,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       await api.isReady;
       const chain = await api.rpc.system.chain();
       this.logger.log(`Connected to ${chain}`);
-      this.networkApis.push({api, type: network.NETWORK});
-      await this.initBlockNumber(network.NETWORK);
+      const blockNumber = await this.initBlockNumber(network.NETWORK);
+      this.networkApis.push({api, block: blockNumber, type: network.NETWORK});
     }
   }
 
@@ -134,7 +132,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public async scanChain(blockNumber: number, api: any, network: string): Promise<any> {
     try {
       const blockEntity = new BlockEntity();
-      this.block.find(item => item.type === network).block = blockNumber;
+      this.networkApis.find(item => item.type === network).block = blockNumber;
       blockEntity.blockNumber = blockNumber;
       blockEntity.timestamp = new Date();
       blockEntity.networkType = network;
@@ -235,7 +233,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
    * @returns blockNumber
    */
   private fetchBlockNumber(network: string) {
-    const blockNumber = this.block.find((item) => item.type === network).block;
+    const blockNumber = this.networkApis.find(item => item.type === network).block;
     return blockNumber;
   }
 
@@ -251,7 +249,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
     const syncedBlock = await query.getRawOne();
     const blockNumber = Number(syncedBlock.blockNumber);
-    this.block.push({type: network, block: blockNumber});
+    return blockNumber;
   }
 
   private async fetchBlock(hash: BlockHash, api: any): Promise<any> {
