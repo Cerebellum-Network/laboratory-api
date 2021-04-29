@@ -47,9 +47,9 @@ export interface ISanitizedArgs {
 export class BlockScannerService implements BlockScannerServiceInterface {
   public logger = new Logger(BlockScannerService.name);
 
-  private networkApis: { api: ApiPromise; type: string }[] = [];
+  private networkApis: {api: ApiPromise; type: string}[] = [];
 
-  private blockNumber: number;
+  private block: {type: string; block: number}[] = [];
 
   public constructor(
     @InjectRepository(BlockEntity)
@@ -57,8 +57,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     @InjectRepository(TransactionEntity)
     private readonly transactionEntityRepository: Repository<TransactionEntity>,
     private readonly configService: ConfigService,
-  ) {
-  }
+  ) {}
 
   public async init(): Promise<any> {
     this.logger.debug('About to scan the network');
@@ -70,7 +69,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       this.logger.error(error.toString());
       this.init();
     }
-
   }
 
   public startScanning() {
@@ -93,6 +91,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       const chain = await api.rpc.system.chain();
       this.logger.log(`Connected to ${chain}`);
       this.networkApis.push({api, type: network.NETWORK});
+      await this.initBlockNumber(network.NETWORK);
     }
   }
 
@@ -130,19 +129,17 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       this.logger.error(error.toString());
       this.init();
     }
-
   }
 
   public async scanChain(blockNumber: number, api: any, network: string): Promise<any> {
     try {
       const blockEntity = new BlockEntity();
-      this.blockNumber = blockNumber;
+      this.block.find(item => item.type === network).block = blockNumber;
       blockEntity.blockNumber = blockNumber;
       blockEntity.timestamp = new Date();
       blockEntity.networkType = network;
 
       await this.blockEntityRepository.save(blockEntity);
-
 
       const blockHash: any = await api.rpc.chain.getBlockHash(blockNumber);
       const momentPrev = await api.query.timestamp.now.at(blockHash);
@@ -195,9 +192,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     this.logger.debug('About to fetch the transaction');
     const balance = await this.getBalance(accountId, network);
     const [result, count] = await this.transactionEntityRepository.findAndCount({
-      relations: [
-        'block',
-      ],
+      relations: ['block'],
       where: {
         senderId: accountId,
         networkType: network,
@@ -236,26 +231,29 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   /**
    * Fetch Block Number from database.
-   * @param network 
+   * @param network
    * @returns blockNumber
    */
-  private async fetchBlockNumber(network: string) {
-    let blockNumber;
-    if (this.blockNumber === undefined) {
-      const query = this.blockEntityRepository
-        .createQueryBuilder('blocks')
-        .select('MAX(blocks.blockNumber)', 'blockNumber')
-        .where('blocks.networkType = :type', {type: network});
-
-      const syncedBlock = await query.getRawOne();
-      blockNumber = Number(syncedBlock.blockNumber);
-      this.blockNumber = blockNumber;
-    } else {
-      blockNumber = this.blockNumber;
-    }
+  private fetchBlockNumber(network: string) {
+    const blockNumber = this.block.find((item) => item.type === network).block;
     return blockNumber;
-   }
-  
+  }
+
+  /**
+   * Initialize the block number
+   * @param network network
+   */
+  private async initBlockNumber(network: string) {
+    const query = this.blockEntityRepository
+      .createQueryBuilder('blocks')
+      .select('MAX(blocks.blockNumber)', 'blockNumber')
+      .where('blocks.networkType = :type', {type: network});
+
+    const syncedBlock = await query.getRawOne();
+    const blockNumber = Number(syncedBlock.blockNumber);
+    this.block.push({type: network, block: blockNumber});
+  }
+
   private async fetchBlock(hash: BlockHash, api: any): Promise<any> {
     const [{block}, events] = await Promise.all([api.rpc.chain.getBlock(hash), api.query.system.events.at(hash)]);
 
