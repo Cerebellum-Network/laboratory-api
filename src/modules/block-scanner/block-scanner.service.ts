@@ -47,7 +47,7 @@ export interface ISanitizedArgs {
 export class BlockScannerService implements BlockScannerServiceInterface {
   public logger = new Logger(BlockScannerService.name);
 
-  private networkApis: { api: ApiPromise; type: string }[] = [];
+  private networkApis: {api: ApiPromise; type: string}[] = [];
 
   public constructor(
     @InjectRepository(BlockEntity)
@@ -55,8 +55,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     @InjectRepository(TransactionEntity)
     private readonly transactionEntityRepository: Repository<TransactionEntity>,
     private readonly configService: ConfigService,
-  ) {
-  }
+  ) {}
 
   public async init(): Promise<any> {
     this.logger.debug('About to scan the network');
@@ -68,7 +67,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       this.logger.error(error.toString());
       this.init();
     }
-
   }
 
   public startScanning() {
@@ -138,7 +136,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       this.logger.error(error.toString());
       this.init();
     }
-
   }
 
   public async scanChain(blockNumber: number, api: any, network: string): Promise<any> {
@@ -149,7 +146,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       blockEntity.networkType = network;
 
       await this.blockEntityRepository.save(blockEntity);
-
 
       const blockHash: any = await api.rpc.chain.getBlockHash(blockNumber);
       const momentPrev = await api.query.timestamp.now.at(blockHash);
@@ -202,9 +198,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     this.logger.debug('About to fetch the transaction');
     const balance = await this.getBalance(accountId, network);
     const [result, count] = await this.transactionEntityRepository.findAndCount({
-      relations: [
-        'block',
-      ],
+      relations: ['block'],
       where: {
         senderId: accountId,
         networkType: network,
@@ -239,6 +233,19 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     // const decimal = await this.api.registry.chainDecimals;
     const result = await formatBalance(balance, {decimals: 15});
     return result;
+  }
+
+  public async restart(network: string, accessKey: string): Promise<any> {
+    this.logger.debug(`About to delete records for : ${network} and restart service`);
+    // await this.blockEntityRepository
+    //   .createQueryBuilder('blocks')
+    //   .delete()
+    //   .where('blocks.networkType = :type', {type: network})
+    //   .execute();
+    await this.transactionEntityRepository.delete({networkType: network});
+    await this.blockEntityRepository.delete({networkType: network});
+    
+    return network;
   }
 
   private async fetchBlock(hash: BlockHash, api: any): Promise<any> {

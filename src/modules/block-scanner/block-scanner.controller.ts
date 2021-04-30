@@ -1,4 +1,4 @@
-import {Controller, Get, Inject, Param, Query} from '@nestjs/common';
+import {Body, Controller, Get, Inject, Param, Post, Query} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {BlockScannerService} from './block-scanner.service';
 import {ApiGatewayTimeoutResponse, ApiInternalServerErrorResponse, ApiTags} from '@nestjs/swagger';
@@ -6,6 +6,7 @@ import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
 import {BalanceDto} from './dto/balance.dto';
+import {PostRestartRequestDto} from './dto/restart.dto';
 
 @Controller('block-scanner')
 @ApiInternalServerErrorResponse({description: 'Internal server error.'})
@@ -45,5 +46,10 @@ export class BlockScannerController {
   @Get('balance/:address/:network')
   public balance(@Param('address') address: string, @Param('network') network: string): Promise<BalanceDto> {
     return this.blockScannerService.getBalance(address, network);
+  }
+
+  @Post('restart')
+  public restart(@Body() postRestartRequestDto: PostRestartRequestDto): Promise<any>{
+    return this.blockScannerService.restart(postRestartRequestDto.network, postRestartRequestDto.accessKey);
   }
 }
