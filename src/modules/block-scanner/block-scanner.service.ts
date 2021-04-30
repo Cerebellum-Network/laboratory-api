@@ -48,7 +48,13 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public logger = new Logger(BlockScannerService.name);
 
   // TODO: https://cerenetwork.atlassian.net/browse/CBI-675 --> update to map
-  private networkProperties: { api: ApiPromise; block: number; type: string}[] = [];
+  private networkProperties: {
+    api: ApiPromise;
+    block: number;
+    stopRequested: boolean;
+    isStopped: boolean;
+    type: string;
+  }[] = [];
 
   public constructor(
     @InjectRepository(BlockEntity)
@@ -90,7 +96,13 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       const chain = await api.rpc.system.chain();
       this.logger.log(`Connected to ${chain}`);
       const blockNumber = await this.initBlockNumber(network.NETWORK);
-      this.networkProperties.push({api, block: blockNumber, type: network.NETWORK});
+      this.networkProperties.push({
+        api,
+        block: blockNumber,
+        stopRequested: false,
+        isStopped: false,
+        type: network.NETWORK,
+      });
     }
   }
 
@@ -101,6 +113,11 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       let latestBlock = await api.rpc.chain.getHeader();
 
       for (let i: number = blockNumber + 1; i <= Number(latestBlock.number); i += 1) {
+        const {stopRequested} = this.networkProperties.find((item) => item.type === network);
+        if (stopRequested) {
+          this.networkProperties.find((item) => item.type === network).isStopped = true;
+          return;
+        }
         await this.scanChain(i, api, network);
         latestBlock = await api.rpc.chain.getHeader();
       }
@@ -133,7 +150,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public async scanChain(blockNumber: number, api: any, network: string): Promise<any> {
     try {
       const blockEntity = new BlockEntity();
-      this.networkProperties.find(item => item.type === network).block = blockNumber;
+      this.networkProperties.find((item) => item.type === network).block = blockNumber;
       blockEntity.blockNumber = blockNumber;
       blockEntity.timestamp = new Date();
       blockEntity.networkType = network;
@@ -230,24 +247,33 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public async restart(network: string, accessKey: string): Promise<any> {
     this.logger.debug(`About to delete records for : ${network} and restart service`);
-    // await this.blockEntityRepository
-    //   .createQueryBuilder('blocks')
-    //   .delete()
-    //   .where('blocks.networkType = :type', {type: network})
-    //   .execute();
-    await this.transactionEntityRepository.delete({networkType: network});
-    await this.blockEntityRepository.delete({networkType: network});
-    
+    this.networkProperties.find((item) => item.type === network).stopRequested = true;
+    this.logger.debug(`Waiting for 10 seconds to scan complete`);
+    await this.sleep(10 * 1000);
+    const {isStopped} = this.networkProperties.find((item) => item.type === network);
+    console.log(isStopped);
+    if (isStopped) {
+      this.logger.debug('Cleaning Transaction and Block table');
+      await this.transactionEntityRepository.delete({networkType: network});
+      await this.blockEntityRepository.delete({networkType: network});
+
+      this.networkProperties.find((item) => item.type === network).block = 0;
+      this.networkProperties.find((item) => item.type === network).stopRequested = false;
+      this.networkProperties.find((item) => item.type === network).isStopped = false;
+      const {api, type} = this.networkProperties.find((item) => item.type === network);
+      this.processOldBlock(api, type);
+    }
+
     return network;
   }
-  
+
   /**
    * Fetch Block Number from database.
    * @param network
    * @returns blockNumber
    */
   private fetchBlockNumber(network: string) {
-    const blockNumber = this.networkProperties.find(item => item.type === network).block;
+    const blockNumber = this.networkProperties.find((item) => item.type === network).block;
     return blockNumber;
   }
 
@@ -264,6 +290,15 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     const syncedBlock = await query.getRawOne();
     const blockNumber = Number(syncedBlock.blockNumber);
     return blockNumber;
+  }
+
+  /**
+   * Sleep
+   * @param ms Time in milli second
+   * @returns promise
+   */
+  private sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private async fetchBlock(hash: BlockHash, api: any): Promise<any> {
