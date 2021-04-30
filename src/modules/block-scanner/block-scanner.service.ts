@@ -1,4 +1,4 @@
-import {Injectable, Logger} from '@nestjs/common';
+import {BadRequestException, Injectable, Logger, UnauthorizedException} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import {BlockEntity} from './entities/block.entity';
@@ -245,13 +245,32 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     return result;
   }
 
+  /**
+   * Clean tables and restart network scanning
+   * @param network network identifier
+   * @param accessKey access key
+   * @returns 
+   */
   public async restart(network: string, accessKey: string): Promise<any> {
     this.logger.debug(`About to delete records for : ${network} and restart service`);
+
+    const systemAccessKey = await this.configService.get('ACCESS_KEY_FOR_RESTART');
+
+    if (this.networkProperties.find((item) => network === item.type) === undefined) {
+      throw new BadRequestException(`Invalid network type.`);
+    }
+
+    if (systemAccessKey !== accessKey) {
+      throw new UnauthorizedException();
+    }
+
     this.networkProperties.find((item) => item.type === network).stopRequested = true;
     this.logger.debug(`Waiting for 10 seconds to scan complete`);
+
     await this.sleep(10 * 1000);
+
     const {isStopped} = this.networkProperties.find((item) => item.type === network);
-    console.log(isStopped);
+
     if (isStopped) {
       this.logger.debug('Cleaning Transaction and Block table');
       await this.transactionEntityRepository.delete({networkType: network});
@@ -264,7 +283,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       this.processOldBlock(api, type);
     }
 
-    return network;
+    return 'Restarted successfull';
   }
 
   /**
