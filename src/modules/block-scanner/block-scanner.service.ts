@@ -47,7 +47,8 @@ export interface ISanitizedArgs {
 export class BlockScannerService implements BlockScannerServiceInterface {
   public logger = new Logger(BlockScannerService.name);
 
-  private networkApis: {api: ApiPromise; type: string}[] = [];
+  // TODO: https://cerenetwork.atlassian.net/browse/CBI-675 --> update to map
+  private networkProperties: { api: ApiPromise; block: number; type: string}[] = [];
 
   public constructor(
     @InjectRepository(BlockEntity)
@@ -71,7 +72,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public startScanning() {
     this.logger.log(`About to start scanning network`);
-    this.networkApis.forEach((item) => {
+    this.networkProperties.forEach((item) => {
       this.processOldBlock(item.api, item.type);
     });
   }
@@ -88,23 +89,18 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       await api.isReady;
       const chain = await api.rpc.system.chain();
       this.logger.log(`Connected to ${chain}`);
-      this.networkApis.push({api, type: network.NETWORK});
+      const blockNumber = await this.initBlockNumber(network.NETWORK);
+      this.networkProperties.push({api, block: blockNumber, type: network.NETWORK});
     }
   }
 
   // Process the blocks from where it has been leftout to current block
   public async processOldBlock(api: any, network: string): Promise<void> {
     try {
-      const query = this.blockEntityRepository
-        .createQueryBuilder('blocks')
-        .select('MAX(blocks.blockNumber)', 'blockNumber')
-        .where('blocks.networkType = :type', {type: network});
-
-      const syncedBlock = await query.getRawOne();
+      const blockNumber = this.fetchBlockNumber(network);
       let latestBlock = await api.rpc.chain.getHeader();
-      const start = Number(syncedBlock.blockNumber);
 
-      for (let i: number = start + 1; i <= Number(latestBlock.number); i += 1) {
+      for (let i: number = blockNumber + 1; i <= Number(latestBlock.number); i += 1) {
         await this.scanChain(i, api, network);
         latestBlock = await api.rpc.chain.getHeader();
       }
@@ -118,14 +114,10 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   // Process the current blocks.
   public async processBlock(api: any, network: string): Promise<void> {
     try {
-      const query = this.blockEntityRepository
-        .createQueryBuilder('blocks')
-        .select('MAX(blocks.blockNumber)', 'blockNumber')
-        .where('blocks.networkType = :type', {type: network});
-
-      const syncedBlock = await query.getRawOne();
+      const blockNumber = this.fetchBlockNumber(network);
       const latestBlock = await api.rpc.chain.getHeader();
-      if (Number(syncedBlock.blockNumber) !== Number(latestBlock.number)) {
+
+      if (blockNumber !== Number(latestBlock.number)) {
         await this.processOldBlock(api, network);
       } else {
         api.derive.chain.subscribeNewHeads(async (header) => {
@@ -141,6 +133,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public async scanChain(blockNumber: number, api: any, network: string): Promise<any> {
     try {
       const blockEntity = new BlockEntity();
+      this.networkProperties.find(item => item.type === network).block = blockNumber;
       blockEntity.blockNumber = blockNumber;
       blockEntity.timestamp = new Date();
       blockEntity.networkType = network;
@@ -225,7 +218,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public async getBalance(address: string, network: string): Promise<any> {
     this.logger.debug(`About to get balance for: ${address}`);
-    const networkParam = this.networkApis.find((item) => item.type === network);
+    const networkParam = this.networkProperties.find((item) => item.type === network);
     const {
       data: {free: balance},
     } = await networkParam.api.query.system.account(address);
@@ -246,6 +239,31 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     await this.blockEntityRepository.delete({networkType: network});
     
     return network;
+  }
+  
+  /**
+   * Fetch Block Number from database.
+   * @param network
+   * @returns blockNumber
+   */
+  private fetchBlockNumber(network: string) {
+    const blockNumber = this.networkProperties.find(item => item.type === network).block;
+    return blockNumber;
+  }
+
+  /**
+   * Initialize the block number
+   * @param network network
+   */
+  private async initBlockNumber(network: string) {
+    const query = this.blockEntityRepository
+      .createQueryBuilder('blocks')
+      .select('MAX(blocks.blockNumber)', 'blockNumber')
+      .where('blocks.networkType = :type', {type: network});
+
+    const syncedBlock = await query.getRawOne();
+    const blockNumber = Number(syncedBlock.blockNumber);
+    return blockNumber;
   }
 
   private async fetchBlock(hash: BlockHash, api: any): Promise<any> {
