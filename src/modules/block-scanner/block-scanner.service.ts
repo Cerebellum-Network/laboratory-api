@@ -47,7 +47,7 @@ export interface ISanitizedArgs {
 export class BlockScannerService implements BlockScannerServiceInterface {
   public logger = new Logger(BlockScannerService.name);
 
-  private networkApis: { api: ApiPromise; block: number; type: string}[] = [];
+  private networkProperties: { api: ApiPromise; block: number; type: string}[] = [];
 
   public constructor(
     @InjectRepository(BlockEntity)
@@ -71,7 +71,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public startScanning() {
     this.logger.log(`About to start scanning network`);
-    this.networkApis.forEach((item) => {
+    this.networkProperties.forEach((item) => {
       this.processOldBlock(item.api, item.type);
     });
   }
@@ -89,14 +89,14 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       const chain = await api.rpc.system.chain();
       this.logger.log(`Connected to ${chain}`);
       const blockNumber = await this.initBlockNumber(network.NETWORK);
-      this.networkApis.push({api, block: blockNumber, type: network.NETWORK});
+      this.networkProperties.push({api, block: blockNumber, type: network.NETWORK});
     }
   }
 
   // Process the blocks from where it has been leftout to current block
   public async processOldBlock(api: any, network: string): Promise<void> {
     try {
-      const blockNumber = await this.fetchBlockNumber(network);
+      const blockNumber = this.fetchBlockNumber(network);
       let latestBlock = await api.rpc.chain.getHeader();
 
       for (let i: number = blockNumber + 1; i <= Number(latestBlock.number); i += 1) {
@@ -113,7 +113,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   // Process the current blocks.
   public async processBlock(api: any, network: string): Promise<void> {
     try {
-      const blockNumber = await this.fetchBlockNumber(network);
+      const blockNumber = this.fetchBlockNumber(network);
       const latestBlock = await api.rpc.chain.getHeader();
 
       if (blockNumber !== Number(latestBlock.number)) {
@@ -132,7 +132,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public async scanChain(blockNumber: number, api: any, network: string): Promise<any> {
     try {
       const blockEntity = new BlockEntity();
-      this.networkApis.find(item => item.type === network).block = blockNumber;
+      this.networkProperties.find(item => item.type === network).block = blockNumber;
       blockEntity.blockNumber = blockNumber;
       blockEntity.timestamp = new Date();
       blockEntity.networkType = network;
@@ -217,7 +217,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public async getBalance(address: string, network: string): Promise<any> {
     this.logger.debug(`About to get balance for: ${address}`);
-    const networkParam = this.networkApis.find((item) => item.type === network);
+    const networkParam = this.networkProperties.find((item) => item.type === network);
     const {
       data: {free: balance},
     } = await networkParam.api.query.system.account(address);
@@ -233,7 +233,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
    * @returns blockNumber
    */
   private fetchBlockNumber(network: string) {
-    const blockNumber = this.networkApis.find(item => item.type === network).block;
+    const blockNumber = this.networkProperties.find(item => item.type === network).block;
     return blockNumber;
   }
 
