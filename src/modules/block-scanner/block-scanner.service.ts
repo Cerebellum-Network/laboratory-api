@@ -47,6 +47,7 @@ export interface ISanitizedArgs {
 export class BlockScannerService implements BlockScannerServiceInterface {
   public logger = new Logger(BlockScannerService.name);
 
+  // TODO: https://cerenetwork.atlassian.net/browse/CBI-675 --> update to map
   private networkProperties: { api: ApiPromise; block: number; type: string}[] = [];
 
   public constructor(
