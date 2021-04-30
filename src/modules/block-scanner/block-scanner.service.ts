@@ -1,4 +1,4 @@
-import {BadRequestException, Injectable, Logger, UnauthorizedException} from '@nestjs/common';
+import {Injectable, Logger} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import {BlockEntity} from './entities/block.entity';
@@ -48,7 +48,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public logger = new Logger(BlockScannerService.name);
 
   // TODO: https://cerenetwork.atlassian.net/browse/CBI-675 --> update to map
-  private networkProperties: {
+  public networkProperties: {
     api: ApiPromise;
     block: number;
     stopRequested: boolean;
@@ -251,18 +251,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
    * @param accessKey access key
    * @returns 
    */
-  public async restart(network: string, accessKey: string): Promise<any> {
+  public async restart(network: string): Promise<any> {
     this.logger.debug(`About to delete records for : ${network} and restart service`);
-
-    const systemAccessKey = await this.configService.get('ACCESS_KEY_FOR_RESTART');
-
-    if (this.networkProperties.find((item) => network === item.type) === undefined) {
-      throw new BadRequestException(`Invalid network type.`);
-    }
-
-    if (systemAccessKey !== accessKey) {
-      throw new UnauthorizedException();
-    }
 
     this.networkProperties.find((item) => item.type === network).stopRequested = true;
     this.logger.debug(`Waiting for 10 seconds to scan complete`);
@@ -283,7 +273,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       this.processOldBlock(api, type);
     }
 
-    return 'Restarted successfull';
+    return true;
   }
 
   /**

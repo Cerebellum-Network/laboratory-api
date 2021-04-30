@@ -1,4 +1,4 @@
-import {Body, Controller, Get, Inject, Param, Post, Query} from '@nestjs/common';
+import {BadRequestException, Body, Controller, Get, Inject, Param, Post, Query, UnauthorizedException} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {BlockScannerService} from './block-scanner.service';
 import {ApiGatewayTimeoutResponse, ApiInternalServerErrorResponse, ApiTags} from '@nestjs/swagger';
@@ -7,6 +7,7 @@ import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
 import {BalanceDto} from './dto/balance.dto';
 import {PostRestartRequestDto} from './dto/restart.dto';
+import {ConfigService} from '../config/config.service';
 
 @Controller('block-scanner')
 @ApiInternalServerErrorResponse({description: 'Internal server error.'})
@@ -16,6 +17,7 @@ export class BlockScannerController {
   public constructor(
     @Inject(BlockScannerService) private readonly appService: BlockScannerServiceInterface,
     private readonly blockScannerService: BlockScannerService,
+    private readonly configService: ConfigService,
   ) {}
 
   @Get('account-blocks/:accountId/:network')
@@ -49,7 +51,18 @@ export class BlockScannerController {
   }
 
   @Post('restart')
-  public restart(@Body() postRestartRequestDto: PostRestartRequestDto): Promise<any>{
-    return this.blockScannerService.restart(postRestartRequestDto.network, postRestartRequestDto.accessKey);
+  public async restart(@Body() postRestartRequestDto: PostRestartRequestDto): Promise<any>{
+    const systemAccessKey = await this.configService.get('ACCESS_KEY_FOR_RESTART');
+
+    if (this.blockScannerService.networkProperties.find((item) => postRestartRequestDto.network === item.type) === undefined) {
+      throw new BadRequestException(`Invalid network type.`);
+    }
+
+    if (systemAccessKey !== postRestartRequestDto.accessKey) {
+      throw new UnauthorizedException();
+    }
+
+    const result = await this.blockScannerService.restart(postRestartRequestDto.network);
+    return 'Restarted Successfully';
   }
 }
