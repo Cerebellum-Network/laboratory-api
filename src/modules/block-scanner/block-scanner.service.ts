@@ -275,20 +275,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       
       this.processOldBlock(api, type);
     });
-  // await this.sleep(10 * 1000);
-    
-    // if (isStopped) {
-    //   this.logger.debug('Cleaning Transaction and Block table');
-    //   await this.transactionEntityRepository.delete({networkType: network});
-    //   await this.blockEntityRepository.delete({networkType: network});
-
-    //   this.networkProperties.find((item) => item.type === network).block = 0;
-    //   this.networkProperties.find((item) => item.type === network).stopRequested = false;
-    //   this.networkProperties.find((item) => item.type === network).isStopped = false;
-    //   const {api, type} = this.networkProperties.find((item) => item.type === network);
-    //   this.processOldBlock(api, type);
-    // }
-
     return true;
   }
 

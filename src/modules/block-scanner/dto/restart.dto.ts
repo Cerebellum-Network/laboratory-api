@@ -5,8 +5,4 @@ export class PostRestartRequestDto {
   @IsNotEmpty()
   @ApiProperty()
   public network: string;
-
-  @IsNotEmpty()
-  @ApiProperty()
-  public accessKey: string;
 }

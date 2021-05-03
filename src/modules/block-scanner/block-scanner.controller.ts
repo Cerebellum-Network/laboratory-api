@@ -1,4 +1,4 @@
-import {BadRequestException, Body, Controller, Get, Inject, Param, Post, Query, UnauthorizedException} from '@nestjs/common';
+import {BadRequestException, Body, Controller, Get, Inject, Param, Post, Query, UnauthorizedException, Headers} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {BlockScannerService} from './block-scanner.service';
 import {ApiGatewayTimeoutResponse, ApiInternalServerErrorResponse, ApiTags} from '@nestjs/swagger';
@@ -51,14 +51,14 @@ export class BlockScannerController {
   }
 
   @Post('restart')
-  public async restart(@Body() postRestartRequestDto: PostRestartRequestDto): Promise<any>{
+  public async restart(@Headers() headers, @Body() postRestartRequestDto: PostRestartRequestDto): Promise<any>{
     const systemAccessKey = await this.configService.get('ACCESS_KEY_FOR_RESTART');
 
     if (this.blockScannerService.networkProperties.find((item) => postRestartRequestDto.network === item.type) === undefined) {
       throw new BadRequestException(`Invalid network type.`);
     }
-
-    if (systemAccessKey !== postRestartRequestDto.accessKey) {
+    
+    if (systemAccessKey !== headers['x-api-key']) {
       throw new UnauthorizedException();
     }
 
