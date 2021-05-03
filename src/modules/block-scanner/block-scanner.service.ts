@@ -18,6 +18,7 @@ import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
 import config from '../shared/constant/config';
+import Deferred from 'promise-deferred';
 
 export interface ISanitizedEvent {
   method: string;
@@ -52,8 +53,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     api: ApiPromise;
     block: number;
     stopRequested: boolean;
-    isStopped: boolean;
     type: string;
+    stopPromise: any;
   }[] = [];
 
   public constructor(
@@ -100,8 +101,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         api,
         block: blockNumber,
         stopRequested: false,
-        isStopped: false,
         type: network.NETWORK,
+        stopPromise: undefined
       });
     }
   }
@@ -115,7 +116,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       for (let i: number = blockNumber + 1; i <= Number(latestBlock.number); i += 1) {
         const {stopRequested} = this.networkProperties.find((item) => item.type === network);
         if (stopRequested) {
-          this.networkProperties.find((item) => item.type === network).isStopped = true;
+          const {stopPromise} = this.networkProperties.find((item) => item.type === network);
+          stopPromise.resolve();
           return;
         }
         await this.scanChain(i, api, network);
@@ -251,27 +253,41 @@ export class BlockScannerService implements BlockScannerServiceInterface {
    * @param accessKey access key
    * @returns 
    */
-  public async restart(network: string): Promise<any> {
+  public restart(network: string): boolean {
     this.logger.debug(`About to delete records for : ${network} and restart service`);
 
+    this.networkProperties.find(item => item.type === network).stopPromise = new Deferred();
     this.networkProperties.find((item) => item.type === network).stopRequested = true;
     this.logger.debug(`Waiting for 10 seconds to scan complete`);
 
-    await this.sleep(10 * 1000);
+    const {stopPromise} = this.networkProperties.find(item => item.type === network);
+   
+    stopPromise.promise.then(async() => {
+      console.log('stop promise resolved');
 
-    const {isStopped} = this.networkProperties.find((item) => item.type === network);
-
-    if (isStopped) {
       this.logger.debug('Cleaning Transaction and Block table');
       await this.transactionEntityRepository.delete({networkType: network});
       await this.blockEntityRepository.delete({networkType: network});
 
       this.networkProperties.find((item) => item.type === network).block = 0;
       this.networkProperties.find((item) => item.type === network).stopRequested = false;
-      this.networkProperties.find((item) => item.type === network).isStopped = false;
       const {api, type} = this.networkProperties.find((item) => item.type === network);
+      
       this.processOldBlock(api, type);
-    }
+    });
+  // await this.sleep(10 * 1000);
+    
+    // if (isStopped) {
+    //   this.logger.debug('Cleaning Transaction and Block table');
+    //   await this.transactionEntityRepository.delete({networkType: network});
+    //   await this.blockEntityRepository.delete({networkType: network});
+
+    //   this.networkProperties.find((item) => item.type === network).block = 0;
+    //   this.networkProperties.find((item) => item.type === network).stopRequested = false;
+    //   this.networkProperties.find((item) => item.type === network).isStopped = false;
+    //   const {api, type} = this.networkProperties.find((item) => item.type === network);
+    //   this.processOldBlock(api, type);
+    // }
 
     return true;
   }
