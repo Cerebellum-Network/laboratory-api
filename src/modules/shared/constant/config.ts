@@ -2,17 +2,22 @@ const config = {
   ChainId: 'u8',
   DepositNonce: 'u64',
   ResourceId: '[u8; 32]',
+  ProposalStatus: {
+    _enum: ['Initiated', 'Approved', 'Rejected']
+  },
   ProposalVotes: {
     votes_for: 'Vec<AccountId>',
     votes_against: 'Vec<AccountId>',
-    status: 'enum',
+    status: 'ProposalStatus',
     expiry: 'BlockNumber'
   },
-  TokenId: 'U256',
+  TokenId: 'u256',
   Erc721Token: {
     id: 'TokenId',
     metadata: 'Vec<u8>'
   },
+  Address: 'AccountId',
+  LookupSource: 'AccountId'
 };
 
 const submitExtrinsicConfig = {
