@@ -43,7 +43,7 @@ export interface ISanitizedArgs {
   [key: string]: unknown;
 }
 
-export interface networkProp {
+export interface NetworkProp {
   api: ApiPromise;
   blockNumber: number;
 };
@@ -52,7 +52,7 @@ export interface networkProp {
 export class BlockScannerService implements BlockScannerServiceInterface {
   public logger = new Logger(BlockScannerService.name);
 
-  private networkMap: Map<string, networkProp> = new Map<string, networkProp>();
+  private networkMap: Map<string, NetworkProp> = new Map<string, NetworkProp>();
   
   public constructor(
     @InjectRepository(BlockEntity)
