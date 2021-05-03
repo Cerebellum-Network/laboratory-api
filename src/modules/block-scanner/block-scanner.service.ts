@@ -53,7 +53,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public logger = new Logger(BlockScannerService.name);
 
   private networkMap: Map<string, NetworkProp> = new Map<string, NetworkProp>();
-  
+
   public constructor(
     @InjectRepository(BlockEntity)
     private readonly blockEntityRepository: Repository<BlockEntity>,
@@ -391,6 +391,12 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         'contracts.instantiate',
         'contracts.putCode',
         'contracts.call',
+        'utility.batch',
+        'cereDdcModule.sendData',
+        'session.setKeys',
+        'staking.bond',
+        'staking.validate',
+        'staking.nominate',
       ];
       extrinsic.forEach(async (txn, index) => {
         if (transferMethods.includes(txn.method)) {
