@@ -54,12 +54,12 @@ export class BlockScannerController {
   public async restart(@Headers() headers, @Body() postRestartRequestDto: PostRestartRequestDto): Promise<any>{
     const systemAccessKey = await this.configService.get('ACCESS_KEY_FOR_RESTART');
 
-    if (this.blockScannerService.networkProperties.find((item) => postRestartRequestDto.network === item.type) === undefined) {
-      throw new BadRequestException(`Invalid network type.`);
-    }
-    
     if (systemAccessKey !== headers['x-api-key']) {
       throw new UnauthorizedException();
+    }
+
+    if (this.blockScannerService.networkProperties.find((item) => postRestartRequestDto.network === item.type) === undefined) {
+      throw new BadRequestException(`Invalid network type.`);
     }
 
     const result = await this.blockScannerService.restart(postRestartRequestDto.network);

@@ -110,7 +110,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   // Process the blocks from where it has been leftout to current block
   public async processOldBlock(api: any, network: string): Promise<void> {
     try {
-      const blockNumber = this.fetchBlockNumber(network);
+      const blockNumber = await this.fetchBlockNumber(network);
       let latestBlock = await api.rpc.chain.getHeader();
 
       for (let i: number = blockNumber + 1; i <= Number(latestBlock.number); i += 1) {
@@ -133,7 +133,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   // Process the current blocks.
   public async processBlock(api: any, network: string): Promise<void> {
     try {
-      const blockNumber = this.fetchBlockNumber(network);
+      const blockNumber = await this.fetchBlockNumber(network);
       const latestBlock = await api.rpc.chain.getHeader();
 
       if (blockNumber !== Number(latestBlock.number)) {
@@ -253,28 +253,27 @@ export class BlockScannerService implements BlockScannerServiceInterface {
    * @param accessKey access key
    * @returns 
    */
-  public restart(network: string): boolean {
+  public async restart(network: string): Promise<any> {
     this.logger.debug(`About to delete records for : ${network} and restart service`);
 
     this.networkProperties.find(item => item.type === network).stopPromise = new Deferred();
     this.networkProperties.find((item) => item.type === network).stopRequested = true;
-    this.logger.debug(`Waiting for 10 seconds to scan complete`);
 
     const {stopPromise} = this.networkProperties.find(item => item.type === network);
    
-    stopPromise.promise.then(async() => {
-      console.log('stop promise resolved');
+    await stopPromise.promise;
 
-      this.logger.debug('Cleaning Transaction and Block table');
-      await this.transactionEntityRepository.delete({networkType: network});
-      await this.blockEntityRepository.delete({networkType: network});
+    this.logger.debug('stop promise resolved');
+    this.logger.debug('Cleaning Transaction and Block table');
+    await this.transactionEntityRepository.delete({networkType: network});
+    await this.blockEntityRepository.delete({networkType: network});
 
-      this.networkProperties.find((item) => item.type === network).block = 0;
-      this.networkProperties.find((item) => item.type === network).stopRequested = false;
-      const {api, type} = this.networkProperties.find((item) => item.type === network);
-      
-      this.processOldBlock(api, type);
-    });
+    this.networkProperties.find((item) => item.type === network).block = undefined;
+    this.networkProperties.find((item) => item.type === network).stopRequested = false;
+    const {api, type} = this.networkProperties.find((item) => item.type === network);
+
+    this.processOldBlock(api, type);
+    
     return true;
   }
 
@@ -283,8 +282,12 @@ export class BlockScannerService implements BlockScannerServiceInterface {
    * @param network
    * @returns blockNumber
    */
-  private fetchBlockNumber(network: string) {
+  private async fetchBlockNumber(network: string) {
     const blockNumber = this.networkProperties.find((item) => item.type === network).block;
+    if (blockNumber === undefined) {
+      const blockNumber = await this.initBlockNumber(network);
+      return blockNumber;
+    }
     return blockNumber;
   }
 
@@ -301,15 +304,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     const syncedBlock = await query.getRawOne();
     const blockNumber = Number(syncedBlock.blockNumber);
     return blockNumber;
-  }
-
-  /**
-   * Sleep
-   * @param ms Time in milli second
-   * @returns promise
-   */
-  private sleep(ms) {
-    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 
   private async fetchBlock(hash: BlockHash, api: any): Promise<any> {
