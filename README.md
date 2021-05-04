@@ -6,7 +6,11 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 
 ## Release notes
 ### vNext
-* 
+*
+
+### v1.7.0
+* Added support of new transactions types
+* Updated custom types config
 
 ### v1.6.0
 * Block number should be stored in-memory
