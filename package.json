@@ -55,6 +55,7 @@
     "moment": "^2.29.1",
     "nestjs-rate-limiter": "^2.7.0",
     "pg": "^8.5.1",
+    "promise-deferred": "^2.0.3",
     "reflect-metadata": "^0.1.13",
     "rimraf": "^3.0.2",
     "rxjs": "^6.6.3",
