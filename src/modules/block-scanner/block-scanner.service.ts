@@ -44,18 +44,18 @@ export interface ISanitizedArgs {
   [key: string]: unknown;
 }
 
+export interface NetworkProp {
+  api: ApiPromise;
+  blockNumber: number;
+  stopRequested: boolean,
+  stopPromise: any
+};
+
 @Injectable()
 export class BlockScannerService implements BlockScannerServiceInterface {
   public logger = new Logger(BlockScannerService.name);
 
-  // TODO: https://cerenetwork.atlassian.net/browse/CBI-675 --> update to map
-  public networkProperties: {
-    api: ApiPromise;
-    block: number;
-    stopRequested: boolean;
-    type: string;
-    stopPromise: any;
-  }[] = [];
+  public networkMap: Map<string, NetworkProp> = new Map<string, NetworkProp>();
 
   public constructor(
     @InjectRepository(BlockEntity)
@@ -79,9 +79,9 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public startScanning() {
     this.logger.log(`About to start scanning network`);
-    this.networkProperties.forEach((item) => {
-      this.processOldBlock(item.api, item.type);
-    });
+    for (const [key, value] of this.networkMap) {
+      this.processOldBlock(value.api, key);
+    }
   }
 
   public async initNetwork(networks: any) {
@@ -97,26 +97,22 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       const chain = await api.rpc.system.chain();
       this.logger.log(`Connected to ${chain}`);
       const blockNumber = await this.initBlockNumber(network.NETWORK);
-      this.networkProperties.push({
-        api,
-        block: blockNumber,
-        stopRequested: false,
-        type: network.NETWORK,
-        stopPromise: undefined
-      });
+
+      this.networkMap.set(network.NETWORK, {api, blockNumber, stopRequested: false, stopPromise: undefined});
     }
   }
 
   // Process the blocks from where it has been leftout to current block
-  public async processOldBlock(api: any, network: string): Promise<void> {
+  public async processOldBlock(api: ApiPromise, network: string): Promise<void> {
     try {
       const blockNumber = await this.fetchBlockNumber(network);
       let latestBlock = await api.rpc.chain.getHeader();
 
       for (let i: number = blockNumber + 1; i <= Number(latestBlock.number); i += 1) {
-        const {stopRequested} = this.networkProperties.find((item) => item.type === network);
+        const {stopRequested} = this.networkMap.get(network);
+        
         if (stopRequested) {
-          const {stopPromise} = this.networkProperties.find((item) => item.type === network);
+          const {stopPromise} = this.networkMap.get(network);
           stopPromise.resolve();
           return;
         }
@@ -131,7 +127,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   }
 
   // Process the current blocks.
-  public async processBlock(api: any, network: string): Promise<void> {
+  public async processBlock(api: ApiPromise, network: string): Promise<void> {
     try {
       const blockNumber = await this.fetchBlockNumber(network);
       const latestBlock = await api.rpc.chain.getHeader();
@@ -149,10 +145,13 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     }
   }
 
-  public async scanChain(blockNumber: number, api: any, network: string): Promise<any> {
+  public async scanChain(blockNumber: number, api: ApiPromise, network: string): Promise<any> {
     try {
       const blockEntity = new BlockEntity();
-      this.networkProperties.find((item) => item.type === network).block = blockNumber;
+
+      const networkProp = this.networkMap.get(network);
+      networkProp.blockNumber = blockNumber;
+
       blockEntity.blockNumber = blockNumber;
       blockEntity.timestamp = new Date();
       blockEntity.networkType = network;
@@ -237,10 +236,10 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public async getBalance(address: string, network: string): Promise<any> {
     this.logger.debug(`About to get balance for: ${address}`);
-    const networkParam = this.networkProperties.find((item) => item.type === network);
+    const networkProp = this.networkMap.get(network);
     const {
       data: {free: balance},
-    } = await networkParam.api.query.system.account(address);
+    } = await networkProp.api.query.system.account(address);
     // FIXME: Fix the decimal position once it is fixed in chain
     // const decimal = await this.api.registry.chainDecimals;
     const result = await formatBalance(balance, {decimals: 15});
@@ -256,10 +255,10 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public async restart(network: string): Promise<any> {
     this.logger.debug(`About to delete records for : ${network} and restart service`);
 
-    this.networkProperties.find(item => item.type === network).stopPromise = new Deferred();
-    this.networkProperties.find((item) => item.type === network).stopRequested = true;
+    this.networkMap.get(network).stopPromise = new Deferred();
+    this.networkMap.get(network).stopRequested = true;
 
-    const {stopPromise} = this.networkProperties.find(item => item.type === network);
+    const {stopPromise} = this.networkMap.get(network);
    
     await stopPromise.promise;
 
@@ -268,11 +267,11 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     await this.transactionEntityRepository.delete({networkType: network});
     await this.blockEntityRepository.delete({networkType: network});
 
-    this.networkProperties.find((item) => item.type === network).block = undefined;
-    this.networkProperties.find((item) => item.type === network).stopRequested = false;
-    const {api, type} = this.networkProperties.find((item) => item.type === network);
+    this.networkMap.get(network).blockNumber = undefined;
+    this.networkMap.get(network).stopRequested = false;
+    const {api} = this.networkMap.get(network);
 
-    this.processOldBlock(api, type);
+    this.processOldBlock(api, network);
     
     return true;
   }
@@ -283,7 +282,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
    * @returns blockNumber
    */
   private async fetchBlockNumber(network: string) {
-    const blockNumber = this.networkProperties.find((item) => item.type === network).block;
+    const {blockNumber} = this.networkMap.get(network);
     if (blockNumber === undefined) {
       const blockNumber = await this.initBlockNumber(network);
       return blockNumber;
@@ -437,6 +436,12 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         'contracts.instantiate',
         'contracts.putCode',
         'contracts.call',
+        'utility.batch',
+        'cereDdcModule.sendData',
+        'session.setKeys',
+        'staking.bond',
+        'staking.validate',
+        'staking.nominate',
       ];
       extrinsic.forEach(async (txn, index) => {
         if (transferMethods.includes(txn.method)) {

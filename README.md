@@ -8,6 +8,13 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### vNext
 *
 
+### v1.7.0
+* Added support of new transactions types
+* Updated custom types config
+
+### v1.6.0
+* Block number should be stored in-memory
+
 ### v1.5.9
 * Fixed Block Scanner restart issue
 * Fixed faucet issue

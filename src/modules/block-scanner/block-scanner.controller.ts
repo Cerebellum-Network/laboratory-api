@@ -58,7 +58,8 @@ export class BlockScannerController {
       throw new UnauthorizedException();
     }
 
-    if (this.blockScannerService.networkProperties.find((item) => postRestartRequestDto.network === item.type) === undefined) {
+    const isNetwork = this.blockScannerService.networkMap.has(postRestartRequestDto.network);
+    if (!isNetwork) {
       throw new BadRequestException(`Invalid network type.`);
     }
 
