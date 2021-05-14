@@ -43,9 +43,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     const provider = new WsProvider(url);
        const api = await ApiPromise.create({
          provider,
-         types: {
-           ...config,
-         },
+         types: config,
        });
     await api.isReady;
     const chain = await api.rpc.system.chain();
