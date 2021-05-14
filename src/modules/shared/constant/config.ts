@@ -16,15 +16,8 @@ const config = {
     id: 'TokenId',
     metadata: 'Vec<u8>'
   },
-  Address: 'AccountId',
-  LookupSource: 'AccountId'
-};
-
-const submitExtrinsicConfig = {
-  Address: 'AccountId',
-  LookupSource: 'Address',
+  Address: 'IndicesLookupSource',
+  LookupSource: 'IndicesLookupSource'
 };
 
 export default config;
-
-export {submitExtrinsicConfig};
