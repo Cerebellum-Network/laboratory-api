@@ -9,7 +9,7 @@ import moment from 'moment';
 import {PayoutEntity} from './entities/payout.entity';
 import {AssetDto} from './dto/assets.dto';
 import {BalanceDto} from './dto/balance.dto';
-import config, {submitExtrinsicConfig} from '../shared/constant/config';
+import config from '../shared/constant/config';
 
 @Injectable()
 export class FriendlyBotService implements FriendlyBotServiceInterface {
@@ -43,10 +43,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     const provider = new WsProvider(url);
        const api = await ApiPromise.create({
          provider,
-         types: {
-           ...config,
-           ...submitExtrinsicConfig,
-         },
+         types: config,
        });
     await api.isReady;
     const chain = await api.rpc.system.chain();
