@@ -240,9 +240,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     const {
       data: {free: balance},
     } = await networkProp.api.query.system.account(address);
-    // FIXME: Fix the decimal position once it is fixed in chain
-    // const decimal = await this.api.registry.chainDecimals;
-    const result = await formatBalance(balance, {decimals: 15});
+    const decimal = network === "TESTNET" ? 15: 10;
+    const result = await formatBalance(balance, {decimals: decimal});
     return result;
   }
 
