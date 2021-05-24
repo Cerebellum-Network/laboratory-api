@@ -71,6 +71,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     }
     const networkParam = this.networkParams.find((item) => item.type === network);
     const {balance} = await this.getBalance(destination, network);
+    // TODO: https://cerenetwork.atlassian.net/browse/CBI-796
     const decimal = network === "TESTNET" ? 15 : 10;
     const initialBal = await formatBalance(balance, {decimals: decimal});
     this.logger.debug(`Initial Balance: ${initialBal}`);

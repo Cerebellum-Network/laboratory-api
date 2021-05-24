@@ -240,6 +240,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     const {
       data: {free: balance},
     } = await networkProp.api.query.system.account(address);
+    // TODO:https://cerenetwork.atlassian.net/browse/CBI-796
     const decimal = network === "TESTNET" ? 15: 10;
     const result = await formatBalance(balance, {decimals: decimal});
     return result;
