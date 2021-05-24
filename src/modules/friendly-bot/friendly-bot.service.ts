@@ -63,7 +63,8 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
   }
 
   public async issueToken(destination: string, network: string): Promise<AssetDto> {
-    if (network === 'MAINNET') {
+    // formatBalance(balance, {decimals: Number(decimal)});
+    if (network.includes('MAINNET')) {
       throw new BadRequestException(`Cant process this request for Mainnet.`)
     }
     if (this.networksParsed.find((item) => network === item.NETWORK) === undefined) {
