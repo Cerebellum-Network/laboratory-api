@@ -14,6 +14,9 @@ export class ValidatorEntity {
   @Column({nullable: true})
   public status: string;
 
+  @Column()
+  public network: string;
+
   @CreateDateColumn({type: 'timestamp', default: () => 'CURRENT_TIMESTAMP(6)'})
   public createdAt: Date;
 }
