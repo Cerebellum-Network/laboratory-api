@@ -9,11 +9,15 @@ import {validatorStatus} from './validatorStatus.enum';
 import {Cron} from '@nestjs/schedule';
 import config from '../shared/constant/config';
 
+export interface NetworkProp {
+  api: ApiPromise;
+}
+
 @Injectable()
 export class HealthService {
   public logger = new Logger(HealthService.name);
 
-  private api: ApiPromise;
+  public network: Map<string, {api: ApiPromise}> = new Map<string, {api: ApiPromise}>();
 
   private blockDifference = Number(this.configService.get('BLOCK_DIFFERENCE'));
 
@@ -25,50 +29,71 @@ export class HealthService {
     this.init();
   }
 
-  public async init(): Promise<ApiPromise> {
-    const networkWsUrl = this.configService.get('NETWORK_WS_URL');
+  public async init() {
+    const networks = JSON.parse(this.configService.get('NETWORKS'));
+    for (const network of networks) {
+      const provider = new WsProvider(network.URL);
+      const api = await ApiPromise.create({
+        provider,
+        types: config,
+      });
+      await api.isReady;
+      const chain = await api.rpc.system.chain();
+      this.logger.log(`Connected to ${chain}`);
 
-    const wsProvider = new WsProvider(networkWsUrl);
-    this.api = await ApiPromise.create({provider: wsProvider, types: config});
-    await this.api.isReady;
-    const chain = await this.api.rpc.system.chain();
-    this.logger.log(`Connected to ${chain}`);
-
-    return this.api;
+      this.network.set(network.NETWORK, {api});
+    }
   }
 
-  public async healthCheck(): Promise<any> {
+  /**
+   * Health check
+   * @param network network string
+   * @returns system health
+   */
+  public async healthCheck(network: string): Promise<any> {
     this.logger.debug(`About to fetch system health`);
-    const result = await this.api.rpc.system.health();
+    if (!this.network.has(network)) {
+      return 'Invalid network type.';
+    }
+    const {api} = this.network.get(network);
+    const result = await api.rpc.system.health();
     return result;
   }
 
-  public async blockStatus(): Promise<BlockStatusDto> {
+  /**
+   * Determine the block finalization status
+   * @param network network string
+   * @returns boolean based on difference
+   */
+  public async blockStatus(network: string): Promise<BlockStatusDto> {
     this.logger.debug(`About to fetch block status`);
-    const {best, finalized} = await this.blockNumber();
+    const {api} = this.network.get(network);
+    const {best, finalized} = await this.blockNumber(api);
     if (best - finalized > this.blockDifference) {
       return new BlockStatusDto(true, finalized, best);
     }
     return new BlockStatusDto(false, finalized, best);
   }
 
-  public async finalization(): Promise<boolean> {
+  public async finalization(network: string): Promise<boolean> {
     this.logger.debug(`About to fetch block status`);
-    const {best, finalized} = await this.blockNumber();
+    const {api} = this.network.get(network);
+    const {best, finalized} = await this.blockNumber(api);
     if (best - finalized > this.blockDifference) {
       return true;
     }
     return false;
   }
 
-  public async blockProduction(): Promise<boolean> {
+  public async blockProduction(network: string): Promise<boolean> {
     this.logger.log(`About to fetch block production time`);
-    const {block} = await this.api.rpc.chain.getBlock();
+    const {api} = this.network.get(network);
+    const {block} = await api.rpc.chain.getBlock();
 
     const {header, extrinsics} = block;
     const lastTime = await this.blockTime(extrinsics);
-    const previousBlockHash = await this.api.rpc.chain.getBlockHash(Number(header.number) - 1);
-    const {block: previousBlock} = await this.api.rpc.chain.getBlock(previousBlockHash);
+    const previousBlockHash = await api.rpc.chain.getBlockHash(Number(header.number) - 1);
+    const {block: previousBlock} = await api.rpc.chain.getBlock(previousBlockHash);
     const {header: prevoiusHeader, extrinsics: previousExtrinsics} = previousBlock;
     const previousTime = await this.blockTime(previousExtrinsics);
     const diff = (Number(lastTime) - Number(previousTime)) / 1000;
@@ -79,40 +104,41 @@ export class HealthService {
   }
 
   /**
-   * Run cron job At minute 40 to check for slashed validator node. 
+   * Run cron job At minute 40 to check for slashed validator node.
    */
   @Cron('40 * * * *')
-  public async validatorSlashed(): Promise<any> {
-    const currentEra = await this.api.query.staking.currentEra();
-    const result = await this.api.query.staking.unappliedSlashes(currentEra.toString());
-    if (result.length === 0) {
-      this.logger.debug(`No validator got slashed in ${currentEra.toString()}`);
-    } else {
-      const slashedValidator: string[] = [];
-      result.forEach((element) => {
-        slashedValidator.push(element.validator.toString());
-      });
-      const validatorEntity = new ValidatorEntity();
-      validatorEntity.era = currentEra.toString();
-      validatorEntity.status = validatorStatus.NEW;
-      validatorEntity.validator = slashedValidator;
-      await this.validatorEntityRepository.save(validatorEntity);
-      return result;
+  public async validatorSlashed() {
+    for (const [key, {api}] of this.network) {
+      const currentEra = await api.query.staking.currentEra();
+      const result = await api.query.staking.unappliedSlashes(currentEra.toString());
+      if (result.length === 0) {
+        this.logger.debug(`No validator got slashed in ${currentEra.toString()} of ${key}`);
+      } else {
+        const slashedValidator: string[] = [];
+        result.forEach((element) => {
+          slashedValidator.push(element.validator.toString());
+        });
+        const validatorEntity = new ValidatorEntity();
+        validatorEntity.era = currentEra.toString();
+        validatorEntity.status = validatorStatus.NEW;
+        validatorEntity.validator = slashedValidator;
+        validatorEntity.network = key;
+        await this.validatorEntityRepository.save(validatorEntity);
+      }
     }
-    return result;
   }
 
   /**
    * Node dropped.
    * @returns notified status
    */
-  public async nodeDropped(): Promise<any> {
-    const validator = await this.validatorEntityRepository.find({status: validatorStatus.NEW});
+  public async nodeDropped(network: string): Promise<any> {
+    const validator = await this.validatorEntityRepository.find({status: validatorStatus.NEW, network});
     await this.validatorEntityRepository
       .createQueryBuilder()
       .update(ValidatorEntity)
       .set({status: validatorStatus.NOTIFIED})
-      .where('status =:status', {status: validatorStatus.NEW})
+      .where('status =:status', {status: validatorStatus.NEW, network})
       .execute();
     if (validator.length === 0) {
       return false;
@@ -122,16 +148,21 @@ export class HealthService {
 
   /**
    * Node dropped status
-   * @returns slashed validator 
+   * @returns slashed validator
    */
-  public async nodeDroppedStatus(): Promise<any> {
-    const validator = await this.validatorEntityRepository.find({take: 10});
+  public async nodeDroppedStatus(network: string): Promise<any> {
+    const validator = await this.validatorEntityRepository.find({where: {network}, take: 10});
     return validator;
   }
 
-  private async blockNumber(): Promise<any> {
-    const finalized = Number(await this.api.derive.chain.bestNumberFinalized());
-    const best = Number(await this.api.derive.chain.bestNumber());
+  /**
+   * Fetch Finalized and best block number
+   * @param api ApiPromise
+   * @returns finalized and best block number
+   */
+  private async blockNumber(api: ApiPromise): Promise<any> {
+    const finalized = Number(await api.derive.chain.bestNumberFinalized());
+    const best = Number(await api.derive.chain.bestNumber());
     return {finalized, best};
   }
 
