@@ -25,19 +25,19 @@ export class HealthController {
   @ApiResponse({status: 200, description: 'System health fetched successfully.'})
   @Get('health-check/:network')
   public healthCheck(@Param('network') network: string): Promise<any> {
-    if (this.healthService.network.has(network)) {
-      return this.healthService.healthCheck(network);
+    if (!this.healthService.network.has(network)) {
+      throw new BadRequestException(`Invalid network type.`);
     }
-    throw new BadRequestException(`Invalid network type.`);
+    return this.healthService.healthCheck(network);
   }
 
   @ApiResponse({status: 200, description: 'Block status info fetched successfully.'})
   @Get('block-status/:network')
   public blockStatus(@Param('network') network: string): Promise<BlockStatusDto> {
-    if (this.healthService.network.has(network)) {
-      return this.healthService.blockStatus(network);
+    if (!this.healthService.network.has(network)) {
+      throw new BadRequestException(`Invalid network type.`);
     }
-    throw new BadRequestException(`Invalid network type.`);
+    return this.healthService.blockStatus(network);
   }
 
   @Get('finalization/:network')
@@ -46,51 +46,48 @@ export class HealthController {
   public async finalization(@Param('network') network: string, @Res() res: Response): Promise<any> {
     if (!this.healthService.network.has(network)) {
       throw new BadRequestException(`Invalid network type.`);
-    } else {
-      const diff = await this.healthService.finalization(network);
-      if (diff) {
-        res.status(HttpStatus.NOT_FOUND).send();
-      }
-      res.status(HttpStatus.NO_CONTENT).send();
     }
+    const diff = await this.healthService.finalization(network);
+    if (diff) {
+      res.status(HttpStatus.NOT_FOUND).send();
+    }
+    res.status(HttpStatus.NO_CONTENT).send();
   }
 
   @Get('block-production/:network')
   @ApiResponse({status: 204, description: 'Block production is healthy.'})
   @ApiNotFoundResponse({description: 'Block production is unhealthy.'})
   public async blockProduction(@Param('network') network: string, @Res() res: Response): Promise<any> {
-    if (this.healthService.network.has(network)) {
-      const diff = await this.healthService.blockProduction(network);
-      if (diff) {
-        res.status(HttpStatus.NO_CONTENT).send();
-      }
-      res.status(HttpStatus.NOT_FOUND).send();
-    } else {
+    if (!this.healthService.network.has(network)) {
       throw new BadRequestException(`Invalid network type.`);
     }
+    const diff = await this.healthService.blockProduction(network);
+    if (diff) {
+      res.status(HttpStatus.NO_CONTENT).send();
+    }
+    res.status(HttpStatus.NOT_FOUND).send();
   }
 
   @Get('node-dropped/:network')
   @ApiResponse({status: 204, description: 'Validator node is healthy.'})
   @ApiNotFoundResponse({description: 'Validator node is unhealthy.'})
   public async nodeDropped(@Param('network') network: string, @Res() res: Response): Promise<any> {
-    if (this.healthService.network.has(network)) {
-      const result = await this.healthService.nodeDropped(network);
-      if (result) {
-        res.status(HttpStatus.NO_CONTENT).send();
-      }
-      res.status(HttpStatus.NOT_FOUND).send();
-    } else {
+    if (!this.healthService.network.has(network)) {
       throw new BadRequestException(`Invalid network type.`);
     }
+    const result = await this.healthService.nodeDropped(network);
+    if (result) {
+      res.status(HttpStatus.NO_CONTENT).send();
+    }
+    res.status(HttpStatus.NOT_FOUND).send();
   }
 
   @Get('node-dropped-status/:network')
   @ApiNotFoundResponse({description: 'Validator node is unhealthy.'})
   public nodeDroppedStatus(@Param('network') network: string): Promise<any> {
-    if (this.healthService.network.has(network)) {
-      return this.healthService.nodeDroppedStatus(network);
+    if (!this.healthService.network.has(network)) {
+      throw new BadRequestException(`Invalid network type.`);
     }
-    throw new BadRequestException(`Invalid network type.`);
+    return this.healthService.nodeDroppedStatus(network);
   }
 }
