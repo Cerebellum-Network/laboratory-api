@@ -6,6 +6,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 
 ## Release notes
 ### vNext
+*
+
+### v1.8.0
 * Updated networks
 * Added support of multi network for health service
 
