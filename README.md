@@ -5,14 +5,13 @@
 This application is supposed to be used as API for [Laboratory UI](https://github.com/Cerebellum-Network/laboratory-ui).
 
 ## Release notes
-
-### vNext(v1.9.0)
-* 
-
-### v1.8.0
+### vNext
 * Updated networks
 * Added support of multi network for health service
 
+### v1.7.0
+* Added support of new transactions types
+* Updated custom types config
 ### v1.7.0
 * Added support of new transactions types
 * Updated custom types config
