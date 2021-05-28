@@ -8,6 +8,10 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### vNext
 *
 
+### v1.8.0
+* Updated networks
+* Added support of multi network for health service
+
 ### v1.7.0
 * Added support of new transactions types
 * Updated custom types config

@@ -9,7 +9,8 @@ import moment from 'moment';
 import {PayoutEntity} from './entities/payout.entity';
 import {AssetDto} from './dto/assets.dto';
 import {BalanceDto} from './dto/balance.dto';
-import config, {submitExtrinsicConfig} from '../shared/constant/config';
+import config from '../shared/constant/config';
+import {formatBalance} from '@polkadot/util';
 
 @Injectable()
 export class FriendlyBotService implements FriendlyBotServiceInterface {
@@ -43,10 +44,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     const provider = new WsProvider(url);
        const api = await ApiPromise.create({
          provider,
-         types: {
-           ...config,
-           ...submitExtrinsicConfig,
-         },
+         types: config,
        });
     await api.isReady;
     const chain = await api.rpc.system.chain();
@@ -66,20 +64,23 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
 
   public async issueToken(destination: string, network: string): Promise<AssetDto> {
     // formatBalance(balance, {decimals: Number(decimal)});
-    if (network === 'MAINNET') {
-      throw new BadRequestException(`Cant process this request for Mainnet.`)
+    if (network.includes('MAINNET')) {
+      throw new BadRequestException(`Can't process this request for Mainnet.`)
     }
     if (this.networksParsed.find((item) => network === item.NETWORK) === undefined) {
       throw new BadRequestException(`Invalid network type.`);
     }
     const networkParam = this.networkParams.find((item) => item.type === network);
     const {balance} = await this.getBalance(destination, network);
-    const initialBal = +balance / 10 ** 15;
+    // TODO: https://cerenetwork.atlassian.net/browse/CBI-796
+    const decimal = network === "QANET" ? 15 : 10;
+    const initialBal = await formatBalance(balance, {decimals: decimal});
     this.logger.debug(`Initial Balance: ${initialBal}`);
     const value = await this.configService.get('NUMBER_OF_TOKENS_TO_SEND');
-    const maxBalance = Number(this.configService.get('MAX_BALANCE'));
+    const actualValue = +value * 10 ** decimal;
+    const maxBalance = Number(this.configService.get('MAX_BALANCE')) * 10 ** decimal;
     const maxRequestPerDay = Number(await this.configService.get('REQUEST_PER_DAY'));
-    if (initialBal >= maxBalance) {
+    if (+balance >= maxBalance ) {
       throw new BadRequestException(`Your balance is ${initialBal}, So we couldn't process your request.`);
     }
 
@@ -95,7 +96,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     if (maxRequestPerDay < count) {
       throw new BadRequestException(`We exceed our daily limit: ${maxRequestPerDay}. Kindly try tomorrow`);
     }
-    const hash = (await this.transfer(destination, value, network)).toString();
+    const hash = (await this.transfer(destination, actualValue.toString(), network)).toString();
     const botEntity = new PayoutEntity();
     botEntity.destination = destination;
     botEntity.txnHash = hash;

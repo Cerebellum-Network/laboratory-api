@@ -18,6 +18,7 @@ import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
 import config from '../shared/constant/config';
+import Deferred from 'promise-deferred';
 
 export interface ISanitizedEvent {
   method: string;
@@ -46,13 +47,15 @@ export interface ISanitizedArgs {
 export interface NetworkProp {
   api: ApiPromise;
   blockNumber: number;
+  stopRequested: boolean,
+  stopPromise: any
 };
 
 @Injectable()
 export class BlockScannerService implements BlockScannerServiceInterface {
   public logger = new Logger(BlockScannerService.name);
 
-  private networkMap: Map<string, NetworkProp> = new Map<string, NetworkProp>();
+  public networkMap: Map<string, NetworkProp> = new Map<string, NetworkProp>();
 
   public constructor(
     @InjectRepository(BlockEntity)
@@ -94,17 +97,25 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       const chain = await api.rpc.system.chain();
       this.logger.log(`Connected to ${chain}`);
       const blockNumber = await this.initBlockNumber(network.NETWORK);
-      this.networkMap.set(network.NETWORK, {api, blockNumber});
+
+      this.networkMap.set(network.NETWORK, {api, blockNumber, stopRequested: false, stopPromise: undefined});
     }
   }
 
   // Process the blocks from where it has been leftout to current block
-  public async processOldBlock(api: any, network: string): Promise<void> {
+  public async processOldBlock(api: ApiPromise, network: string): Promise<void> {
     try {
-      const blockNumber = this.fetchBlockNumber(network);
+      const blockNumber = await this.fetchBlockNumber(network);
       let latestBlock = await api.rpc.chain.getHeader();
 
       for (let i: number = blockNumber + 1; i <= Number(latestBlock.number); i += 1) {
+        const {stopRequested} = this.networkMap.get(network);
+        
+        if (stopRequested) {
+          const {stopPromise} = this.networkMap.get(network);
+          stopPromise.resolve();
+          return;
+        }
         await this.scanChain(i, api, network);
         latestBlock = await api.rpc.chain.getHeader();
       }
@@ -116,9 +127,9 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   }
 
   // Process the current blocks.
-  public async processBlock(api: any, network: string): Promise<void> {
+  public async processBlock(api: ApiPromise, network: string): Promise<void> {
     try {
-      const blockNumber = this.fetchBlockNumber(network);
+      const blockNumber = await this.fetchBlockNumber(network);
       const latestBlock = await api.rpc.chain.getHeader();
 
       if (blockNumber !== Number(latestBlock.number)) {
@@ -134,7 +145,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     }
   }
 
-  public async scanChain(blockNumber: number, api: any, network: string): Promise<any> {
+  public async scanChain(blockNumber: number, api: ApiPromise, network: string): Promise<any> {
     try {
       const blockEntity = new BlockEntity();
 
@@ -229,10 +240,40 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     const {
       data: {free: balance},
     } = await networkProp.api.query.system.account(address);
-    // FIXME: Fix the decimal position once it is fixed in chain
-    // const decimal = await this.api.registry.chainDecimals;
-    const result = await formatBalance(balance, {decimals: 15});
+    // TODO:https://cerenetwork.atlassian.net/browse/CBI-796
+    const decimal = network === "QANET" ? 15: 10;
+    const result = await formatBalance(balance, {decimals: decimal});
     return result;
+  }
+
+  /**
+   * Clean tables and restart network scanning
+   * @param network network identifier
+   * @param accessKey access key
+   * @returns 
+   */
+  public async restart(network: string): Promise<any> {
+    this.logger.debug(`About to delete records for : ${network} and restart service`);
+
+    this.networkMap.get(network).stopPromise = new Deferred();
+    this.networkMap.get(network).stopRequested = true;
+
+    const {stopPromise} = this.networkMap.get(network);
+   
+    await stopPromise.promise;
+
+    this.logger.debug('stop promise resolved');
+    this.logger.debug('Cleaning Transaction and Block table');
+    await this.transactionEntityRepository.delete({networkType: network});
+    await this.blockEntityRepository.delete({networkType: network});
+
+    this.networkMap.get(network).blockNumber = undefined;
+    this.networkMap.get(network).stopRequested = false;
+    const {api} = this.networkMap.get(network);
+
+    this.processOldBlock(api, network);
+    
+    return true;
   }
 
   /**
@@ -240,8 +281,12 @@ export class BlockScannerService implements BlockScannerServiceInterface {
    * @param network
    * @returns blockNumber
    */
-  private fetchBlockNumber(network: string) {
+  private async fetchBlockNumber(network: string) {
     const {blockNumber} = this.networkMap.get(network);
+    if (blockNumber === undefined) {
+      const blockNumber = await this.initBlockNumber(network);
+      return blockNumber;
+    }
     return blockNumber;
   }
 
