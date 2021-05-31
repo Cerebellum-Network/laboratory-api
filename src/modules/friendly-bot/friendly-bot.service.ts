@@ -127,8 +127,9 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
       networkParam.api.tx.balances.transfer(address, value).signAndSend(networkParam.faucet, {nonce}, ({status}) => {
         if (status.isInBlock) {
           this.logger.log(`Included in ${status.asInBlock}`);
+          res(status.asInBlock.toHex());
         } else if (status.isFinalized) {
-          res(status.asFinalized.toHex());
+          this.logger.log(`The transaction is Finalized ${status.asFinalized}`)
         }
       })
         .catch((err) => rej(err));
