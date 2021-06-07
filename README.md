@@ -6,7 +6,7 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 
 ## Release notes
 ### vNext
-*
+* Fixed node-status issue
 
 ### v1.8.0
 * Updated networks
