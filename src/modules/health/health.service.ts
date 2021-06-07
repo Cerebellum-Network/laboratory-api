@@ -108,6 +108,7 @@ export class HealthService {
    */
   @Cron('40 * * * *')
   public async validatorSlashed() {
+    this.logger.log(`About to run cron for validator slashing`);
     for (const [key, {api}] of this.network) {
       const currentEra = await api.query.staking.currentEra();
       const result = await api.query.staking.unappliedSlashes(currentEra.toString());
@@ -118,12 +119,20 @@ export class HealthService {
         result.forEach((element) => {
           slashedValidator.push(element.validator.toString());
         });
-        const validatorEntity = new ValidatorEntity();
-        validatorEntity.era = currentEra.toString();
-        validatorEntity.status = validatorStatus.NEW;
-        validatorEntity.validator = slashedValidator;
-        validatorEntity.network = key;
-        await this.validatorEntityRepository.save(validatorEntity);
+        const query = await this.validatorEntityRepository
+          .createQueryBuilder('validator')
+          .select('MAX(validator.era)', 'era')
+          .where('validator.network = :network', {network: key});
+
+        const {era} = await query.getRawOne();
+        if (+era !== +currentEra) {
+          const validatorEntity = new ValidatorEntity();
+          validatorEntity.era = currentEra.toString();
+          validatorEntity.status = validatorStatus.NEW;
+          validatorEntity.validator = slashedValidator;
+          validatorEntity.network = key;
+          await this.validatorEntityRepository.save(validatorEntity);
+        }
       }
     }
   }
@@ -138,7 +147,8 @@ export class HealthService {
       .createQueryBuilder()
       .update(ValidatorEntity)
       .set({status: validatorStatus.NOTIFIED})
-      .where('status =:status', {status: validatorStatus.NEW, network})
+      .where('status =:status', {status: validatorStatus.NEW})
+      .andWhere('network = :network', {network})
       .execute();
     if (validator.length === 0) {
       return false;
