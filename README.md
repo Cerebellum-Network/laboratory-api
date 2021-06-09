@@ -8,6 +8,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### vNext
 *
 
+### v1.10.0
+* Fixing status code for node-status
+
 ### v1.9.0
 * Fixed node-status issue
 
