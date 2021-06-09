@@ -151,9 +151,9 @@ export class HealthService {
       .andWhere('network = :network', {network})
       .execute();
     if (validator.length === 0) {
-      return false;
+      return true;
     }
-    return true;
+    return false;
   }
 
   /**
