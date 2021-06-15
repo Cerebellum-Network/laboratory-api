@@ -19,6 +19,7 @@ import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
 import config from '../shared/constant/config';
 import Deferred from 'promise-deferred';
+import _ from 'lodash';
 
 export interface ISanitizedEvent {
   method: string;
@@ -455,20 +456,27 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             events.push(eventData);
           });
 
-          const transactionEntity = new TransactionEntity();
-          transactionEntity.transactionHash = txn.hash?.toString();
-          transactionEntity.events = events;
-          transactionEntity.nonce = txn.nonce?.toString();
-          transactionEntity.transactionIndex = index;
-          transactionEntity.success = txn.success;
-          transactionEntity.signature = txn.signature?.signature.toString();
-          transactionEntity.senderId = txn.signature?.signer.toString();
-          transactionEntity.args = txn.args?.toString();
-          transactionEntity.method = txn.method;
-          transactionEntity.timestamp = block.timestamp;
-          transactionEntity.block = block;
-          transactionEntity.networkType = network;
-          await this.transactionEntityRepository.save(transactionEntity);
+          const transaction = await this.transactionEntityRepository.findOne({
+            transactionHash: txn.hash.toString(),
+          });
+          if (_.isEmpty(transaction)) {
+            const transactionEntity = new TransactionEntity();
+            transactionEntity.transactionHash = txn.hash?.toString();
+            transactionEntity.events = events;
+            transactionEntity.nonce = txn.nonce?.toString();
+            transactionEntity.transactionIndex = index;
+            transactionEntity.success = txn.success;
+            transactionEntity.signature = txn.signature?.signature.toString();
+            transactionEntity.senderId = txn.signature?.signer.toString();
+            transactionEntity.args = txn.args?.toString();
+            transactionEntity.method = txn.method;
+            transactionEntity.timestamp = block.timestamp;
+            transactionEntity.block = block;
+            transactionEntity.networkType = network;
+            await this.transactionEntityRepository.save(transactionEntity);
+          } else {
+            this.logger.debug(`The transaction with Transaction Hash ${txn.hash} is already added`);
+          }
         } else {
           // this.logger.debug(`No Transaction for block: ${block.blockNumber}\n\n`);
         }
