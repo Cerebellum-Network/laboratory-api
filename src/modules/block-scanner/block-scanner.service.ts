@@ -3,7 +3,7 @@ import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import {BlockEntity} from './entities/block.entity';
 import {TransactionEntity} from './entities/transaction.entity';
-import {Repository} from 'typeorm';
+import {Repository, getConnection} from 'typeorm';
 import {InjectRepository} from '@nestjs/typeorm';
 import {ConfigService} from '../config/config.service';
 import {toBlockDto} from './mapper/position.mapper';
@@ -152,26 +152,23 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       const networkProp = this.networkMap.get(network);
       networkProp.blockNumber = blockNumber;
 
-      blockEntity.blockNumber = blockNumber;
-      blockEntity.timestamp = new Date();
-      blockEntity.networkType = network;
-
-      await this.blockEntityRepository.save(blockEntity);
-
       const blockHash: any = await api.rpc.chain.getBlockHash(blockNumber);
       const momentPrev = await api.query.timestamp.now.at(blockHash);
       // Fetch block data
       const blockData = await this.fetchBlock(blockHash, api);
 
-      blockEntity.authorPublicKey = blockData.authorId?.toString();
-      blockEntity.stateRoot = blockData.stateRoot.toString();
-      blockEntity.parentHash = blockData.parentHash.toString();
+      const data = {
+        blockNumber,
+        networkType: network,
+        authorPublicKey: blockData.authorId?.toString(),
+        stateRoot: blockData.stateRoot.toString(),
+        parentHash: blockData.parentHash.toString(),
+        blockHash: blockHash.toString(),
+        timestamp: new Date(momentPrev.toNumber()),
+        extrinsicRoot: blockData.extrinsicsRoot.toString(),
+      };
 
-      blockEntity.blockHash = blockHash.toString();
-      blockEntity.timestamp = new Date(momentPrev.toNumber());
-      blockEntity.extrinsicRoot = blockData.extrinsicsRoot.toString();
-
-      await this.blockEntityRepository.save(blockEntity);
+      await getConnection().createQueryBuilder().insert().into('blocks').values(data).execute();
 
       await this.processExtrinsics(blockData.extrinsics, blockEntity, network);
     } catch (error) {

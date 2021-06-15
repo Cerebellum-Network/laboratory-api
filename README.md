@@ -6,7 +6,7 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 
 ## Release notes
 ### vNext
-*
+* Optimised insert query for blocks table.
 
 ### v1.10.0
 * Fixing status code for node-status
