@@ -1,8 +1,8 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import {Column, Entity, PrimaryGeneratedColumn, ManyToOne} from 'typeorm';
+import {Column, Entity, PrimaryGeneratedColumn, ManyToOne, Unique} from 'typeorm';
 import {BlockEntity} from "./block.entity";
 
-;
+@Unique(["transactionHash"])
 @Entity('transactions')
 export class TransactionEntity {
   @PrimaryGeneratedColumn()
