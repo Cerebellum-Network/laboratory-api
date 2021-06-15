@@ -455,7 +455,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             events.push(eventData);
           });
 
-          const transactionData = {
+          const transactionEntity = {
             transactionHash: txn.hash?.toString(),
             events,
             nonce: txn.nonce?.toString(),
@@ -474,7 +474,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             .createQueryBuilder()
             .insert()
             .into('transactions')
-            .values(transactionData)
+            .values(transactionEntity)
             .onConflict(`("transactionHash") DO NOTHING`)
             .execute();
         } else {
