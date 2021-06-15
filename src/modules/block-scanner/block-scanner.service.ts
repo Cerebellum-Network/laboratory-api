@@ -19,7 +19,6 @@ import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
 import config from '../shared/constant/config';
 import Deferred from 'promise-deferred';
-import _ from 'lodash';
 
 export interface ISanitizedEvent {
   method: string;
@@ -456,27 +455,28 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             events.push(eventData);
           });
 
-          const transaction = await this.transactionEntityRepository.findOne({
-            transactionHash: txn.hash.toString(),
-          });
-          if (_.isEmpty(transaction)) {
-            const transactionEntity = new TransactionEntity();
-            transactionEntity.transactionHash = txn.hash?.toString();
-            transactionEntity.events = events;
-            transactionEntity.nonce = txn.nonce?.toString();
-            transactionEntity.transactionIndex = index;
-            transactionEntity.success = txn.success;
-            transactionEntity.signature = txn.signature?.signature.toString();
-            transactionEntity.senderId = txn.signature?.signer.toString();
-            transactionEntity.args = txn.args?.toString();
-            transactionEntity.method = txn.method;
-            transactionEntity.timestamp = block.timestamp;
-            transactionEntity.block = block;
-            transactionEntity.networkType = network;
-            await this.transactionEntityRepository.save(transactionEntity);
-          } else {
-            this.logger.debug(`The transaction with Transaction Hash ${txn.hash} is already added`);
-          }
+          const transactionData = {
+            transactionHash: txn.hash?.toString(),
+            events,
+            nonce: txn.nonce?.toString(),
+            transactionIndex: index,
+            success: txn.success,
+            signature: txn.signature?.signature.toString(),
+            senderId: txn.signature?.signer.toString(),
+            args: txn.args?.toString(),
+            method: txn.method,
+            timestamp: block.timestamp,
+            block,
+            networkType: network,
+          };
+
+          await this.transactionEntityRepository
+            .createQueryBuilder()
+            .insert()
+            .into('transactions')
+            .values(transactionData)
+            .onConflict(`("transactionHash") DO NOTHING`)
+            .execute();
         } else {
           // this.logger.debug(`No Transaction for block: ${block.blockNumber}\n\n`);
         }
