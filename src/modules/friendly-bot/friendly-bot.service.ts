@@ -33,19 +33,21 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
 
   public init(): any {
     this.networksParsed.forEach(async (network) => {
-      const api = await this.initProvider(network.URL);
-      const faucet = await this.initFaucet(network.FAUCET, network.PASSWORD);
-      this.logger.log(`Faucet Address: ${faucet.address}`);
-      this.networkParams.push({api, faucet, type: network.NETWORK});
+      if (network.NETWORK !== 'MAINNET') {
+        this.logger.debug(`About to initialize ${network.NETWORK}`);
+        const api = await this.initProvider(network.URL);
+        const faucet = await this.initFaucet(network.FAUCET, network.PASSWORD);
+        this.networkParams.push({api, faucet, type: network.NETWORK});
+      }
     });
   }
 
   public async initProvider(url: string): Promise<ApiPromise> {
     const provider = new WsProvider(url);
-       const api = await ApiPromise.create({
-         provider,
-         types: config,
-       });
+    const api = await ApiPromise.create({
+      provider,
+      types: config,
+    });
     await api.isReady;
     const chain = await api.rpc.system.chain();
     this.logger.log(`Connected to ${chain}`);
@@ -58,14 +60,14 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     this.keyRingType = 'sr25519';
     const wallet = keyring.addFromJson(walletJson);
     wallet.decodePkcs8(password);
-
+    this.logger.log(`Faucet Address: ${wallet.address}`);
     return wallet;
   }
 
   public async issueToken(destination: string, network: string): Promise<AssetDto> {
     // formatBalance(balance, {decimals: Number(decimal)});
     if (network.includes('MAINNET')) {
-      throw new BadRequestException(`Can't process this request for Mainnet.`)
+      throw new BadRequestException(`Can't process this request for Mainnet.`);
     }
     if (this.networksParsed.find((item) => network === item.NETWORK) === undefined) {
       throw new BadRequestException(`Invalid network type.`);
@@ -80,7 +82,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     const actualValue = +value * 10 ** decimal;
     const maxBalance = Number(this.configService.get('MAX_BALANCE')) * 10 ** decimal;
     const maxRequestPerDay = Number(await this.configService.get('REQUEST_PER_DAY'));
-    if (+balance >= maxBalance ) {
+    if (+balance >= maxBalance) {
       throw new BadRequestException(`Your balance is ${initialBal}, So we couldn't process your request.`);
     }
 
@@ -124,14 +126,16 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     const {nonce} = await networkParam.api.query.system.account(networkParam.faucet.address);
 
     return new Promise((res, rej) => {
-      networkParam.api.tx.balances.transfer(address, value).signAndSend(networkParam.faucet, {nonce}, ({status}) => {
-        if (status.isInBlock) {
-          this.logger.log(`Included in ${status.asInBlock}`);
-          res(status.asInBlock.toHex());
-        } else if (status.isFinalized) {
-          this.logger.log(`The transaction is Finalized ${status.asFinalized}`)
-        }
-      })
+      networkParam.api.tx.balances
+        .transfer(address, value)
+        .signAndSend(networkParam.faucet, {nonce}, ({status}) => {
+          if (status.isInBlock) {
+            this.logger.log(`Included in ${status.asInBlock}`);
+            res(status.asInBlock.toHex());
+          } else if (status.isFinalized) {
+            this.logger.log(`The transaction is Finalized ${status.asFinalized}`);
+          }
+        })
         .catch((err) => rej(err));
     });
   }

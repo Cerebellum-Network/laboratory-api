@@ -8,6 +8,7 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### vNext
 * Fixed duplicate issue with transaction
 * Fixing health API response issue
+* Fixing friendly bot Mainnet error
 
 ### v1.10.0
 * Fixing status code for node-status
