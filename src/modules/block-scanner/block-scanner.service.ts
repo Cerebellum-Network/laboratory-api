@@ -3,7 +3,7 @@ import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import {BlockEntity} from './entities/block.entity';
 import {TransactionEntity} from './entities/transaction.entity';
-import {Repository} from 'typeorm';
+import {getConnection, Repository} from 'typeorm';
 import {InjectRepository} from '@nestjs/typeorm';
 import {ConfigService} from '../config/config.service';
 import {toBlockDto} from './mapper/position.mapper';
@@ -147,31 +147,26 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public async scanChain(blockNumber: number, api: ApiPromise, network: string): Promise<any> {
     try {
-      const blockEntity = new BlockEntity();
-
+      this.logger.debug(`scan chain: ${network} - ${blockNumber}`);
       const networkProp = this.networkMap.get(network);
       networkProp.blockNumber = blockNumber;
-
-      blockEntity.blockNumber = blockNumber;
-      blockEntity.timestamp = new Date();
-      blockEntity.networkType = network;
-
-      await this.blockEntityRepository.save(blockEntity);
-
       const blockHash: any = await api.rpc.chain.getBlockHash(blockNumber);
       const momentPrev = await api.query.timestamp.now.at(blockHash);
       // Fetch block data
       const blockData = await this.fetchBlock(blockHash, api);
 
-      blockEntity.authorPublicKey = blockData.authorId?.toString();
-      blockEntity.stateRoot = blockData.stateRoot.toString();
-      blockEntity.parentHash = blockData.parentHash.toString();
+      const blockEntity = {
+        blockNumber,
+        networkType: network,
+        authorPublicKey: blockData.authorId?.toString(),
+        stateRoot: blockData.stateRoot.toString(),
+        parentHash: blockData.parentHash.toString(),
+        blockHash: blockHash.toString(),
+        timestamp: new Date(momentPrev.toNumber()),
+        extrinsicRoot: blockData.extrinsicsRoot.toString()
+      }
 
-      blockEntity.blockHash = blockHash.toString();
-      blockEntity.timestamp = new Date(momentPrev.toNumber());
-      blockEntity.extrinsicRoot = blockData.extrinsicsRoot.toString();
-
-      await this.blockEntityRepository.save(blockEntity);
+      await getConnection().createQueryBuilder().insert().into('blocks').values(blockEntity).execute();
 
       await this.processExtrinsics(blockData.extrinsics, blockEntity, network);
     } catch (error) {
@@ -324,17 +319,17 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
     const defaultSuccess = typeof events === 'string' ? events : false;
     const extrinsics = block.extrinsics.map((extrinsic) => {
-      const {method, nonce, signature, signer, isSigned, tip, args} = extrinsic;
-      const convertedHash = u8aToHex(blake2AsU8a(extrinsic.toU8a(), 256));
+      const {method, nonce, signature, signer, isSigned, tip} = extrinsic;
+      const hash = u8aToHex(blake2AsU8a(extrinsic.toU8a(), 256));
+      const call = block.registry.createType('Call', method);
 
       return {
         method: `${method.section}.${method.method}`,
         signature: isSigned ? {signature, signer} : null,
         nonce,
-        args,
-        // newArgs: this.parseGenericCall(method).args,
+        args: this.parseGenericCall(call, block.registry).args,
         tip,
-        hash: convertedHash,
+        hash,
         info: {},
         events: [] as ISanitizedEvent[],
         success: defaultSuccess,
@@ -352,7 +347,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         const sanitizedEvent = {
           method: `${event.section}.${event.method}`,
           data: event.data,
-        } as any;
+        };
 
         if (phase.isApplyExtrinsic) {
           const extrinsicIdx = phase.asApplyExtrinsic.toNumber();
@@ -375,7 +370,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             const sanitizedData = event.data.toJSON() as any[];
 
             for (const data of sanitizedData) {
-              // eslint-disablRegistrye-next-line @typescript-eslint/no-unsafe-member-access
+              // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
               if (data && data.paysFee) {
                 extrinsic.paysFee =
                   // eslint-disable-next-line @typescript-eslint/no-unsafe-member-access
@@ -395,22 +390,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
           onInitialize.events.push(sanitizedEvent);
         }
       }
-    }
-
-    // The genesis block is a special case with little information associated with it.
-    if (parentHash.every((byte) => !byte)) {
-      return {
-        number,
-        hash,
-        parentHash,
-        stateRoot,
-        extrinsicsRoot,
-        authorId,
-        logs,
-        onInitialize,
-        extrinsics,
-        onFinalize,
-      };
     }
 
     return {
@@ -463,7 +442,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             success: txn.success,
             signature: txn.signature?.signature.toString(),
             senderId: txn.signature?.signer.toString(),
-            args: txn.args?.toString(),
+            args: txn.args ? JSON.stringify(txn.args) : null,
             method: txn.method,
             timestamp: block.timestamp,
             block,
