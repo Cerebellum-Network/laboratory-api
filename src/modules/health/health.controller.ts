@@ -50,8 +50,9 @@ export class HealthController {
     const diff = await this.healthService.finalization(network);
     if (diff) {
       res.status(HttpStatus.NOT_FOUND).send();
-    }
-    res.status(HttpStatus.NO_CONTENT).send();
+    } else {
+      res.status(HttpStatus.NO_CONTENT).send();
+    } 
   }
 
   @Get('block-production/:network')
@@ -64,8 +65,9 @@ export class HealthController {
     const diff = await this.healthService.blockProduction(network);
     if (diff) {
       res.status(HttpStatus.NO_CONTENT).send();
+    } else {
+      res.status(HttpStatus.NOT_FOUND).send();
     }
-    res.status(HttpStatus.NOT_FOUND).send();
   }
 
   @Get('node-dropped/:network')
@@ -78,8 +80,9 @@ export class HealthController {
     const result = await this.healthService.nodeDropped(network);
     if (result) {
       res.status(HttpStatus.NO_CONTENT).send();
+    } else {
+      res.status(HttpStatus.NOT_FOUND).send();
     }
-    res.status(HttpStatus.NOT_FOUND).send();
   }
 
   @Get('node-dropped-status/:network')
