@@ -318,6 +318,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     });
 
     const defaultSuccess = typeof events === 'string' ? events : false;
+    this.logger.log(JSON.stringify(block.extrinsics));
     const extrinsics = block.extrinsics.map((extrinsic) => {
       const {method, nonce, signature, signer, isSigned, tip} = extrinsic;
       const hash = u8aToHex(blake2AsU8a(extrinsic.toU8a(), 256));
@@ -422,6 +423,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         'staking.validate',
         'staking.nominate',
       ];
+      this.logger.log(`process Extrinsics: ${JSON.stringify(extrinsic)}`)
       extrinsic.forEach(async (txn, index) => {
         if (transferMethods.includes(txn.method)) {
           txn.events.forEach((value) => {
