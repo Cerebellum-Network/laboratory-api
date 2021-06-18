@@ -272,6 +272,20 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   }
 
   /**
+   * CHecks for duplicate entries
+   * @param startTime start time
+   * @param network network identifier
+   */
+  public async duplicate(startTime: string, network: string): Promise<any> {
+    this.logger.log(`About to check for duplicate enteries in transactions`);
+    const rawQuery = `SELECT "transactionHash" FROM transactions WHERE "networkType" = '${network}' AND timestamp >= '${startTime}' GROUP BY "transactionHash" HAVING COUNT("transactionHash") > 1`;
+    const duplicate = await this.transactionEntityRepository.query(
+      rawQuery
+    );
+    return duplicate;
+  }
+
+  /**
    * Fetch Block Number from database.
    * @param network
    * @returns blockNumber
