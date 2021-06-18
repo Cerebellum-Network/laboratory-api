@@ -130,6 +130,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public async processBlock(api: ApiPromise, network: string): Promise<void> {
     try {
       const blockNumber = await this.fetchBlockNumber(network);
+      
       const latestBlock = await api.rpc.chain.getHeader();
 
       if (blockNumber !== Number(latestBlock.number)) {
@@ -454,7 +455,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             .insert()
             .into('transactions')
             .values(transactionEntity)
-            .onConflict(`("transactionHash") DO NOTHING`)
             .execute();
         } else {
           // this.logger.debug(`No Transaction for block: ${block.blockNumber}\n\n`);
