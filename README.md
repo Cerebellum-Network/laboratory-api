@@ -137,6 +137,16 @@ $ nvm exec npm run start:dev
 $ nvm exec npm run start:prod
 ```
 
+## Create and run migrations
+Create a migration:
+```bash
+npm run typeorm:migration:create nameOfMigration
+```
+Run migrations manually:
+```bash
+npm run typeorm:migration:run
+``` 
+
 ## Run Tests
 
 ```bash
