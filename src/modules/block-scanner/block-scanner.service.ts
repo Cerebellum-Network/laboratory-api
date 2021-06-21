@@ -18,6 +18,7 @@ import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
 import config from '../shared/constant/config';
+import qaConfig from '../shared/constant/qanet.config';
 import Deferred from 'promise-deferred';
 
 export interface ISanitizedEvent {
@@ -88,9 +89,10 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     this.logger.debug('Init Network');
     for (const network of networks) {
       const provider = new WsProvider(network.URL);
+      const networkConfig = network.NETWORK === 'QANET' ? qaConfig : config;
       const api = await ApiPromise.create({
         provider,
-        types: config,
+        types: networkConfig,
       });
 
       await api.isReady;
