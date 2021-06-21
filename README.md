@@ -9,6 +9,7 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 * Fixed duplicate issue with transaction
 * Fixing health API response issue
 * Fixing friendly bot Mainnet error
+* Updating the network config for QANET
 
 ### v1.10.0
 * Fixing status code for node-status
