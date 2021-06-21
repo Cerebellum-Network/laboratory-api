@@ -8,6 +8,7 @@ import {Repository} from 'typeorm';
 import {validatorStatus} from './validatorStatus.enum';
 import {Cron} from '@nestjs/schedule';
 import config from '../shared/constant/config';
+import qaConfig from '../shared/constant/qanet.config';
 
 export interface NetworkProp {
   api: ApiPromise;
@@ -33,9 +34,10 @@ export class HealthService {
     const networks = JSON.parse(this.configService.get('NETWORKS'));
     for (const network of networks) {
       const provider = new WsProvider(network.URL);
+      const networkConfig = network.NETWORK === 'QANET' ? qaConfig : config;
       const api = await ApiPromise.create({
         provider,
-        types: config,
+        types: networkConfig,
       });
       await api.isReady;
       const chain = await api.rpc.system.chain();
