@@ -437,6 +437,14 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             events.push(eventData);
           });
 
+          let arg;
+          if (txn.method === 'balances.transfer' || 'balances.transferKeepAlive') {
+            const {dest, value} = txn.args;
+            arg = `${dest}, ${value}`;
+          } else {
+            arg = txn.args.toString();
+          }
+
           const transactionEntity = {
             transactionHash: txn.hash?.toString(),
             events,
@@ -445,7 +453,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             success: txn.success,
             signature: txn.signature?.signature.toString(),
             senderId: txn.signature?.signer.toString(),
-            args: txn.args ? JSON.stringify(txn.args) : null,
+            args: arg,
             method: txn.method,
             timestamp: block.timestamp,
             block,
