@@ -1,5 +1,5 @@
 /* eslint-disable @typescript-eslint/ban-types */
-import {Column, Entity, PrimaryGeneratedColumn, ManyToOne, Index} from 'typeorm';
+import {Column, Entity, PrimaryGeneratedColumn, ManyToOne} from 'typeorm';
 import {BlockEntity} from "./block.entity";
 
 @Entity('transactions')
@@ -39,8 +39,7 @@ export class TransactionEntity {
 
   @Column({nullable: true})
   public networkType: string;
-
-  @Index()
+  
   @ManyToOne(() => BlockEntity, blocks => blocks.blockNumber)
   public block: BlockEntity;
 }
