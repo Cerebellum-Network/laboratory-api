@@ -6,6 +6,8 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 
 ## Release notes
 ### vNext
+* Added migrations framework
+* Added migration to clean up Devnet scanned data
 
 ### v1.11.0
 * Fixed duplicate issue with transaction
@@ -136,6 +138,16 @@ $ nvm exec npm run start:dev
 # production mode
 $ nvm exec npm run start:prod
 ```
+
+## Create and run migrations
+Create a migration:
+```bash
+npm run typeorm:migration:create nameOfMigration
+```
+Run migrations manually:
+```bash
+npm run typeorm:migration:run
+``` 
 
 ## Run Tests
 
