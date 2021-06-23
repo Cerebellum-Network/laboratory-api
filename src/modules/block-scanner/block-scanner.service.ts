@@ -465,6 +465,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             .insert()
             .into('transactions')
             .values(transactionEntity)
+            .onConflict(`("transactionHash") DO NOTHING`)
             .execute();
         } else {
           // this.logger.debug(`No Transaction for block: ${block.blockNumber}\n\n`);
