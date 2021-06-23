@@ -13,6 +13,7 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 * Fixed duplicate issue with transaction
 * Fixing health API response issue
 * Fixing friendly bot Mainnet error
+* Add api to find duplicate entries in transaction table
 * Updating the network config for QANET
 
 ### v1.10.0

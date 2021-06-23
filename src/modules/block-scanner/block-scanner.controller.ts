@@ -8,6 +8,7 @@ import {LatestBlockDto} from './dto/latest-block.dto';
 import {BalanceDto} from './dto/balance.dto';
 import {PostRestartRequestDto} from './dto/restart.dto';
 import {ConfigService} from '../config/config.service';
+import {DuplicateRequestDto} from './dto/duplicate.dto';
 
 @Controller('block-scanner')
 @ApiInternalServerErrorResponse({description: 'Internal server error.'})
@@ -65,5 +66,15 @@ export class BlockScannerController {
 
     const result = await this.blockScannerService.restart(postRestartRequestDto.network);
     return 'Restarted Successfully';
+  }
+
+  @Post('duplicate')
+  public duplicate(@Headers() headers, @Body() duplicateRequestDto: DuplicateRequestDto): Promise<any>{
+    const isNetwork = this.blockScannerService.networkMap.has(duplicateRequestDto.network);
+    if (!isNetwork) {
+      throw new BadRequestException(`Invalid network type.`);
+    }
+
+   return this.blockScannerService.duplicate(duplicateRequestDto.startTime, duplicateRequestDto.network);
   }
 }
