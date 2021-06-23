@@ -11,6 +11,7 @@ import {AssetDto} from './dto/assets.dto';
 import {BalanceDto} from './dto/balance.dto';
 import config from '../shared/constant/config';
 import {formatBalance} from '@polkadot/util';
+import qaConfig from '../shared/constant/qanet.config';
 
 @Injectable()
 export class FriendlyBotService implements FriendlyBotServiceInterface {
@@ -35,18 +36,19 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     this.networksParsed.forEach(async (network) => {
       if (network.NETWORK !== 'MAINNET') {
         this.logger.debug(`About to initialize ${network.NETWORK}`);
-        const api = await this.initProvider(network.URL);
+        const networkConfig = network.NETWORK === 'QANET' ? qaConfig : config;
+        const api = await this.initProvider(network.URL, networkConfig);
         const faucet = await this.initFaucet(network.FAUCET, network.PASSWORD);
         this.networkParams.push({api, faucet, type: network.NETWORK});
       }
     });
   }
 
-  public async initProvider(url: string): Promise<ApiPromise> {
+  public async initProvider(url: string, networkConfig: any): Promise<ApiPromise> {
     const provider = new WsProvider(url);
     const api = await ApiPromise.create({
       provider,
-      types: config,
+      types: networkConfig,
     });
     await api.isReady;
     const chain = await api.rpc.system.chain();

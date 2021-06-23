@@ -7,7 +7,7 @@ export class TransactionEntity {
   @PrimaryGeneratedColumn()
   public id: number;
 
-  @Column({nullable: true})
+  @Column({nullable: true, unique: true})
   public transactionHash: string;
 
   @Column({nullable: true})

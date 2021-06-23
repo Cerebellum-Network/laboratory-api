@@ -1,7 +1,7 @@
 {
   "name": "@Cerebellum-Network/laboratory-api",
   "repository": "git://github.com/Cerebellum-Network/laboratory-api.git",
-  "version": "1.7.0",
+  "version": "1.11.0",
   "description": "",
   "author": "",
   "license": "MIT",
@@ -9,6 +9,8 @@
     "init": "npm i",
     "build": "rimraf dist && tsc -p tsconfig.build.json",
     "format": "prettier --write \"src/**/*.ts\"",
+    "prestart:dev": "npm run typeorm:migration:run",
+    "prestart:prod": "npm run typeorm:migration:run",
     "start": "ts-node -r tsconfig-paths/register src/main.ts",
     "start:dev": "nodemon --exec \"npm run lint && ts-node src/main.ts\"",
     "start:debug": "tsc-watch -p tsconfig.build.json --onSuccess \"node --inspect-brk dist/main.js\"",
@@ -19,7 +21,10 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json"
+    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js --config src/modules/database/ormconfig.ts",
+    "typeorm:migration:create": "npm run typeorm -- migration:create -n",
+    "typeorm:migration:run": "npm run typeorm -- migration:run"
   },
   "husky": {
     "hooks": {

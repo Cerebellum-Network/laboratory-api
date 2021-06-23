@@ -18,6 +18,7 @@ import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
 import config from '../shared/constant/config';
+import qaConfig from '../shared/constant/qanet.config';
 import Deferred from 'promise-deferred';
 
 export interface ISanitizedEvent {
@@ -88,9 +89,10 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     this.logger.debug('Init Network');
     for (const network of networks) {
       const provider = new WsProvider(network.URL);
+      const networkConfig = network.NETWORK === 'QANET' ? qaConfig : config;
       const api = await ApiPromise.create({
         provider,
-        types: config,
+        types: networkConfig,
       });
 
       await api.isReady;
@@ -130,6 +132,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public async processBlock(api: ApiPromise, network: string): Promise<void> {
     try {
       const blockNumber = await this.fetchBlockNumber(network);
+      
       const latestBlock = await api.rpc.chain.getHeader();
 
       if (blockNumber !== Number(latestBlock.number)) {
@@ -448,6 +451,14 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             events.push(eventData);
           });
 
+          let arg;
+          if (txn.method === 'balances.transfer' || 'balances.transferKeepAlive') {
+            const {dest, value} = txn.args;
+            arg = `${dest}, ${value}`;
+          } else {
+            arg = txn.args.toString();
+          }
+
           const transactionEntity = {
             transactionHash: txn.hash?.toString(),
             events,
@@ -456,7 +467,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             success: txn.success,
             signature: txn.signature?.signature.toString(),
             senderId: txn.signature?.signer.toString(),
-            args: txn.args ? JSON.stringify(txn.args) : null,
+            args: arg,
             method: txn.method,
             timestamp: block.timestamp,
             block,
