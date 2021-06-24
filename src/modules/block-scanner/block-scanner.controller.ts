@@ -8,7 +8,6 @@ import {LatestBlockDto} from './dto/latest-block.dto';
 import {BalanceDto} from './dto/balance.dto';
 import {PostRestartRequestDto} from './dto/restart.dto';
 import {ConfigService} from '../config/config.service';
-import {DuplicateRequestDto} from './dto/duplicate.dto';
 
 @Controller('block-scanner')
 @ApiInternalServerErrorResponse({description: 'Internal server error.'})
@@ -68,8 +67,8 @@ export class BlockScannerController {
     return 'Restarted Successfully';
   }
 
-  @Get('have-duplicates/:network/:startTime?')
-  public haveDuplicates(@Param('startTime') startTime: string, @Param('network') network: string): Promise<any>{
+  @Get('have-duplicates/:network')
+  public haveDuplicates(@Query('startTime') startTime: string, @Param('network') network: string): Promise<any>{
     const networkSupported = this.blockScannerService.networkMap.has(network);
     if (!networkSupported) {
       throw new BadRequestException(`Invalid network type.`);

@@ -275,7 +275,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   }
 
   /**
-   * CHecks for duplicate entries
+   * Checks for duplicate entries
    * @param startTime start time
    * @param network network identifier
    */
