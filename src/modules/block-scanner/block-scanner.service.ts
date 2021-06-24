@@ -132,7 +132,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public async processBlock(api: ApiPromise, network: string): Promise<void> {
     try {
       const blockNumber = await this.fetchBlockNumber(network);
-      
+
       const latestBlock = await api.rpc.chain.getHeader();
 
       if (blockNumber !== Number(latestBlock.number)) {
@@ -166,8 +166,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         parentHash: blockData.parentHash.toString(),
         blockHash: blockHash.toString(),
         timestamp: new Date(momentPrev.toNumber()),
-        extrinsicRoot: blockData.extrinsicsRoot.toString()
-      }
+        extrinsicRoot: blockData.extrinsicsRoot.toString(),
+      };
 
       await getConnection().createQueryBuilder().insert().into('blocks').values(blockEntity).execute();
 
@@ -248,7 +248,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
    * Clean tables and restart network scanning
    * @param network network identifier
    * @param accessKey access key
-   * @returns 
+   * @returns
    */
   public async restart(network: string): Promise<any> {
     this.logger.debug(`About to delete records for : ${network} and restart service`);
@@ -257,7 +257,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     this.networkMap.get(network).stopRequested = true;
 
     const {stopPromise} = this.networkMap.get(network);
-   
+
     await stopPromise.promise;
 
     this.logger.debug('stop promise resolved');
@@ -270,8 +270,26 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     const {api} = this.networkMap.get(network);
 
     this.processOldBlock(api, network);
-    
+
     return true;
+  }
+
+  /**
+   * Checks for duplicate entries
+   * @param startTime start time
+   * @param network network identifier
+   */
+  public async haveDuplicates(startTime: string, network: string): Promise<any> {
+    this.logger.log(`About to check for duplicate enteries in transactions from ${startTime} of ${network}`);
+    let rawQuery;
+    if (startTime === undefined) {
+      rawQuery = `SELECT "transactionHash" FROM transactions WHERE "networkType" = '${network}' GROUP BY "transactionHash" HAVING COUNT("transactionHash") > 1`;
+    } else {
+      rawQuery = `SELECT "transactionHash" FROM transactions WHERE "networkType" = '${network}' AND timestamp >= '${startTime}' GROUP BY "transactionHash" HAVING COUNT("transactionHash") > 1`;
+    }
+
+    const duplicate = await this.transactionEntityRepository.query(rawQuery);
+    return duplicate;
   }
 
   /**
@@ -465,6 +483,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             .insert()
             .into('transactions')
             .values(transactionEntity)
+            .onConflict(`("transactionHash") DO NOTHING`)
             .execute();
         } else {
           // this.logger.debug(`No Transaction for block: ${block.blockNumber}\n\n`);
