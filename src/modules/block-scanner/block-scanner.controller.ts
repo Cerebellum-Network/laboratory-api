@@ -68,13 +68,13 @@ export class BlockScannerController {
     return 'Restarted Successfully';
   }
 
-  @Post('duplicate')
-  public duplicate(@Headers() headers, @Body() duplicateRequestDto: DuplicateRequestDto): Promise<any>{
-    const isNetwork = this.blockScannerService.networkMap.has(duplicateRequestDto.network);
-    if (!isNetwork) {
+  @Get('have-duplicates/:network/:startTime?')
+  public haveDuplicates(@Param('startTime') startTime: string, @Param('network') network: string): Promise<any>{
+    const networkSupported = this.blockScannerService.networkMap.has(network);
+    if (!networkSupported) {
       throw new BadRequestException(`Invalid network type.`);
     }
 
-   return this.blockScannerService.duplicate(duplicateRequestDto.startTime, duplicateRequestDto.network);
+   return this.blockScannerService.haveDuplicates(startTime, network);
   }
 }
