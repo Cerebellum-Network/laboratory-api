@@ -9,6 +9,7 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 * Added migrations framework
 * Added migration to clean up Devnet scanned data
 * Add api to find duplicate entries in transaction table
+* Adding health api for bridge relayer accounts
 
 ### v1.11.0
 * Fixed duplicate issue with transaction
