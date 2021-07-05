@@ -20,7 +20,7 @@ export class HealthService {
 
   public network: Map<string, {api: ApiPromise}> = new Map<string, {api: ApiPromise}>();
 
-  public accounts: Map<string, {address: string}> = new Map<string, {address: string}>();
+  public accounts: Map<string, {address: string, thresholdBalance: string}> = new Map<string, {address: string, thresholdBalance: string}>();
   
   private blockDifference = Number(this.configService.get('BLOCK_DIFFERENCE'));
 
@@ -175,12 +175,11 @@ export class HealthService {
 
   public async accountThreshold(accountName: string): Promise<boolean>{
     this.logger.debug(`About to fetch account threshold status`);
-    const thresholdBalance = +this.configService.get('BRIDGE_ACCOUNTS_THRESHOLD');
-    const {address} = this.accounts.get(accountName);
+    const {address, thresholdBalance} = this.accounts.get(accountName);
     const {api} = this.network.get(this.bridgeNetwork);
     const accountData = await api.query.system.account(address);
     const freeBalance = +accountData.data.free;
-    if (freeBalance <= thresholdBalance) {
+    if (freeBalance <= +thresholdBalance) {
       return false
     } 
       return true;
@@ -213,7 +212,7 @@ export class HealthService {
   private loadAccount() {
     const bridgeAccounts = JSON.parse(this.configService.get('BRIDGE_ACCOUNTS'));
     bridgeAccounts.forEach(account => {
-      this.accounts.set(account.name, {address:account.address});
+      this.accounts.set(account.walletName, {address:account.address, thresholdBalance: account.thresholdBalance});
     });
   }
 }
