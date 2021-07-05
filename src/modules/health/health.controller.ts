@@ -93,4 +93,19 @@ export class HealthController {
     }
     return this.healthService.nodeDroppedStatus(network);
   }
+
+  @Get('account-threshold/:accountName')
+  @ApiNotFoundResponse({description: 'Account balance is less than threshold'})
+  public async accountThreshold(@Param('accountName') accountName: string, @Res() res: Response): Promise<any>{
+    if (!this.healthService.accounts.has(accountName)) {
+      throw new BadRequestException(`Invalid account name.`);
+    }
+    const result = await this.healthService.accountThreshold(accountName);
+    if (result) {
+      res.status(HttpStatus.NO_CONTENT).send();
+    } else {
+      res.status(HttpStatus.NOT_FOUND).send();
+    }
+  }
+
 }
