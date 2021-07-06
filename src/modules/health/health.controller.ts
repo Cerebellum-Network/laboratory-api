@@ -93,4 +93,36 @@ export class HealthController {
     }
     return this.healthService.nodeDroppedStatus(network);
   }
+
+  @Get('balances/:network')
+  public async checkMinBalance(@Param('network') network: string, @Res() res: Response): Promise<any>{
+    if (!this.healthService.accounts.has(network)) {
+      throw new BadRequestException(`Invalid network type.`);
+    }
+    const {status, result} = await this.healthService.checkMinBalance(network);
+    if (status) {
+      res.status(HttpStatus.NO_CONTENT).send();
+    } else {
+      res.status(HttpStatus.NOT_FOUND).send(result);
+    }
+  }
+
+  @Get('balances/:network/:name')
+  public async checkMinBalanceForAccount(@Param('network') network: string, @Param('name') name: string, @Res() res: Response): Promise<any> {
+    if (!this.healthService.accounts.has(network)) {
+      throw new BadRequestException(`Invalid network type.`);
+    }
+    const {account} = this.healthService.accounts.get(network);
+    const found = account.find((element) => element.name === name);
+    if (!found) {
+      throw new BadRequestException(`Invalid account name.`);
+    }
+    const {status, result} = await this.healthService.checkMinBalanceOfAccount(network, name);
+    if (status) {
+      res.status(HttpStatus.NO_CONTENT).send();
+    } else {
+      res.status(HttpStatus.NOT_FOUND).send(result);
+    }
+  }
+
 }
