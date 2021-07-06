@@ -237,7 +237,6 @@ export class HealthService {
     healthAccounts.forEach((element) => {
       this.accounts.set(element.network, {account: element.accounts});
     });
-
   }
 
   /**
