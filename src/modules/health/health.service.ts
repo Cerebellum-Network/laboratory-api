@@ -14,14 +14,20 @@ export interface NetworkProp {
   api: ApiPromise;
 }
 
+interface AccountData {
+  address: string;
+  name: string;
+  minBalance: number;
+}
+
 @Injectable()
 export class HealthService {
   public logger = new Logger(HealthService.name);
 
   public network: Map<string, {api: ApiPromise}> = new Map<string, {api: ApiPromise}>();
 
-  public accounts: Map<string, {address: string, thresholdBalance: string}> = new Map<string, {address: string, thresholdBalance: string}>();
-  
+  public accounts: Map<string, {account: [AccountData]}> = new Map<string, {account: [AccountData]}>();
+
   private blockDifference = Number(this.configService.get('BLOCK_DIFFERENCE'));
 
   public bridgeNetwork: string;
@@ -33,7 +39,7 @@ export class HealthService {
   ) {
     this.bridgeNetwork = this.configService.get('BRIDGE_ACCOUNTS_NETWORK');
     this.init();
-    this.loadAccount();
+    this.loadHealthAccount();
   }
 
   public async init() {
@@ -173,16 +179,33 @@ export class HealthService {
     return validator;
   }
 
-  public async accountThreshold(accountName: string): Promise<boolean>{
-    this.logger.debug(`About to fetch account threshold status`);
-    const {address, thresholdBalance} = this.accounts.get(accountName);
+  /**
+   * Check Minimum balance of all accounts in a network
+   * @param network Network type
+   * @returns boolean
+   */
+  public async checkMinBalance(network: string): Promise<any> {
+    this.logger.debug(`About to check account minimum balance`);
+    const {account} = this.accounts.get(network);
     const {api} = this.network.get(this.bridgeNetwork);
-    const accountData = await api.query.system.account(address);
-    const freeBalance = +accountData.data.free;
-    if (freeBalance <= +thresholdBalance) {
-      return false
-    } 
-      return true;
+    const {status, result} = await this.validateBalance(api, account);
+    return {status, result};
+  }
+
+  /**
+   * Check the min balance of account
+   * @param network API promise
+   * @param accountName account name
+   * @returns status result
+   */
+  public async checkMinBalanceOfAccount(network: string, accountName: string): Promise<any>{
+    this.logger.debug(`About to check account minimum balance`);
+    const {account} = this.accounts.get(network);
+    const found = account.find(element => element.name === accountName);
+    const accountArray = [found];
+    const {api} = this.network.get(this.bridgeNetwork);
+    const {status, result} = await this.validateBalance(api, accountArray);
+    return {status, result};
   }
 
   /**
@@ -207,12 +230,41 @@ export class HealthService {
   }
 
   /**
-   * Load bridge accounts
+   * Load Health accounts
    */
-  private loadAccount() {
-    const bridgeAccounts = JSON.parse(this.configService.get('BRIDGE_ACCOUNTS'));
-    bridgeAccounts.forEach(account => {
-      this.accounts.set(account.walletName, {address:account.address, thresholdBalance: account.thresholdBalance});
+  private loadHealthAccount() {
+    const healthAccounts = JSON.parse(this.configService.get('HEALTH_ACCOUNTS_BALANCE'));
+    healthAccounts.forEach((element) => {
+      this.accounts.set(element.network, {account: element.accounts});
     });
+
+  }
+
+  /**
+   * Compares the price with minBalance 
+   * @param api API Promise of network
+   * @param accounts accounts object
+   * @returns status and result
+   */
+  private async validateBalance(api: ApiPromise, accounts: AccountData[]): Promise<any> {
+    // eslint-disable-next-line prefer-const
+    let result = [];
+    let status = true;
+    const decimal = api.registry.chainDecimals;
+    for await (const element of accounts) {
+      const {address, minBalance, name} = element;
+      const accountData = await api.query.system.account(address);
+      const freeBalance = +accountData.data.free / 10 ** +decimal;
+      if (freeBalance <= minBalance) {
+        status = false;
+        const data = {
+          address,
+          name,
+          freeBalance,
+        };
+        result.push(data);
+      }
+    }
+    return ({status, result});
   }
 }
