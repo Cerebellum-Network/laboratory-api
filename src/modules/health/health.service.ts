@@ -30,14 +30,11 @@ export class HealthService {
 
   private blockDifference = Number(this.configService.get('BLOCK_DIFFERENCE'));
 
-  public bridgeNetwork: string;
-
   public constructor(
     private readonly configService: ConfigService,
     @InjectRepository(ValidatorEntity)
     private readonly validatorEntityRepository: Repository<ValidatorEntity>,
   ) {
-    this.bridgeNetwork = this.configService.get('BRIDGE_ACCOUNTS_NETWORK');
     this.init();
     this.loadHealthAccount();
   }
@@ -187,7 +184,7 @@ export class HealthService {
   public async checkMinBalance(network: string): Promise<any> {
     this.logger.debug(`About to check account minimum balance`);
     const {account} = this.accounts.get(network);
-    const {api} = this.network.get(this.bridgeNetwork);
+    const {api} = this.network.get(network);
     const {status, result} = await this.validateBalance(api, account);
     return {status, result};
   }
@@ -203,7 +200,7 @@ export class HealthService {
     const {account} = this.accounts.get(network);
     const found = account.find(element => element.name === accountName);
     const accountArray = [found];
-    const {api} = this.network.get(this.bridgeNetwork);
+    const {api} = this.network.get(network);
     const {status, result} = await this.validateBalance(api, accountArray);
     return {status, result};
   }
