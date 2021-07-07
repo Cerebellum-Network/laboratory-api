@@ -6,6 +6,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 
 ## Release notes
 ### vNext
+*
+
+### v1.12.0
 * Added migrations framework
 * Added migration to clean up Devnet scanned data
 * Add api to find duplicate entries in transaction table
