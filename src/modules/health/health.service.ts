@@ -40,6 +40,8 @@ export class HealthService {
   }
 
   public async init() {
+    this.logger.log('Networks');
+    this.logger.log(this.configService.get('NETWORKS'));
     const networks = JSON.parse(this.configService.get('NETWORKS'));
     for (const network of networks) {
       const provider = new WsProvider(network.URL);
@@ -230,6 +232,8 @@ export class HealthService {
    * Load Health accounts
    */
   private loadHealthAccount() {
+    this.logger.log('load health accounts');
+    this.logger.log(this.configService.get('HEALTH_ACCOUNTS_BALANCE'))
     const healthAccounts = JSON.parse(this.configService.get('HEALTH_ACCOUNTS_BALANCE'));
     healthAccounts.forEach((element) => {
       this.accounts.set(element.network, {account: element.accounts});
