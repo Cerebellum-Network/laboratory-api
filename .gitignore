@@ -1,6 +1,8 @@
 # compiled output
 /dist
 /node_modules
+/experiments/node_modules
+/experiments/build
 
 # Logs
 logs
