@@ -20,6 +20,7 @@ import {LatestBlockDto} from './dto/latest-block.dto';
 import config from '../shared/constant/config';
 import qaConfig from '../shared/constant/qanet.config';
 import Deferred from 'promise-deferred';
+import * as fs from "fs";
 
 export interface ISanitizedEvent {
   method: string;
@@ -112,7 +113,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
       for (let i: number = blockNumber + 1; i <= Number(latestBlock.number); i += 1) {
         const {stopRequested} = this.networkMap.get(network);
-        
+
         if (stopRequested) {
           const {stopPromise} = this.networkMap.get(network);
           stopPromise.resolve();
@@ -297,13 +298,14 @@ export class BlockScannerService implements BlockScannerServiceInterface {
    * @param network
    * @returns blockNumber
    */
-  private async fetchBlockNumber(network: string) {
-    const {blockNumber} = this.networkMap.get(network);
-    if (blockNumber === undefined) {
-      const blockNumber = await this.initBlockNumber(network);
-      return blockNumber;
-    }
-    return blockNumber;
+  private fetchBlockNumber(network: string) {
+    return 600000;
+    // const {blockNumber} = this.networkMap.get(network);
+    // if (blockNumber === undefined) {
+    //   const blockNumber = await this.initBlockNumber(network);
+    //   return blockNumber;
+    // }
+    // return blockNumber;
   }
 
   /**
@@ -443,8 +445,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         'staking.validate',
         'staking.nominate',
       ];
-      extrinsic.forEach(async (txn, index) => {
-        if (transferMethods.includes(txn.method)) {
+      extrinsic.forEach((txn, index) => {
+        if (true) {
           txn.events.forEach((value) => {
             const method = value.method.split('.');
             const eventData = {
@@ -478,13 +480,18 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             networkType: network,
           };
 
-          await this.transactionEntityRepository
-            .createQueryBuilder()
-            .insert()
-            .into('transactions')
-            .values(transactionEntity)
-            .onConflict(`("transactionHash") DO NOTHING`)
-            .execute();
+          // console.log(JSON.stringify(transactionEntity));
+
+          const content = `${JSON.stringify(transactionEntity)}\n`;
+          fs.appendFileSync('log.txt', content);
+
+          // await this.transactionEntityRepository
+          //   .createQueryBuilder()
+          //   .insert()
+          //   .into('transactions')
+          //   .values(transactionEntity)
+          //   .onConflict(`("transactionHash") DO NOTHING`)
+          //   .execute();
         } else {
           // this.logger.debug(`No Transaction for block: ${block.blockNumber}\n\n`);
         }
