@@ -150,6 +150,10 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   }
 
   public async scanChain(blockNumber: number, api: ApiPromise, network: string): Promise<any> {
+    if (blockNumber >= 600000) {
+      console.log("Finish");
+      process.exit(0);
+    }
     try {
       this.logger.debug(`scan chain: ${network} - ${blockNumber}`);
       const networkProp = this.networkMap.get(network);
@@ -299,7 +303,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
    * @returns blockNumber
    */
   private fetchBlockNumber(network: string) {
-    return 600000;
+    return 580000;
     // const {blockNumber} = this.networkMap.get(network);
     // if (blockNumber === undefined) {
     //   const blockNumber = await this.initBlockNumber(network);
