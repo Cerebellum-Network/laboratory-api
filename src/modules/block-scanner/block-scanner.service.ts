@@ -215,7 +215,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       take: limit,
       skip: offset,
       order: {
-        timestamp: 'ASC'
+        timestamp: 'DESC'
       }
     });
 
