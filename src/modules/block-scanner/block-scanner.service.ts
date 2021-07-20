@@ -214,6 +214,9 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       },
       take: limit,
       skip: offset,
+      order: {
+        timestamp: 'DESC'
+      }
     });
 
     const data = await result.map((transaction) => toTransactionDto(transaction));
