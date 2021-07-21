@@ -6,6 +6,8 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 
 ## Release notes
 ### vNext
+
+### v1.13.0
 * Added order by(descending) for transaction history.
 
 ### v1.12.0
