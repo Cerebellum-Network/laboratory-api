@@ -102,7 +102,7 @@ export class PeerService {
       data: {free: balance},
     } = await networkParam.api.query.system.account(treasuryAccount);
     // TODO:https://cerenetwork.atlassian.net/browse/CBI-796
-    const decimal = network === "QANET" ? 15: 10;
+    const decimal = 10;
     const formatedBalance = formatBalance(balance, {decimals: decimal});
     return formatedBalance;
   }
@@ -119,7 +119,7 @@ export class PeerService {
     const networkParam = this.networkParams.find((item) => item.type === network);
     const totalIssuance = await networkParam.api.query.balances.totalIssuance();
     // TODO:https://cerenetwork.atlassian.net/browse/CBI-796
-    const decimal = network === "QANET" ? 15: 10;
+    const decimal = 10;
     const formatedValue = formatBalance(totalIssuance, {decimals: decimal});
     return formatedValue;
   }
