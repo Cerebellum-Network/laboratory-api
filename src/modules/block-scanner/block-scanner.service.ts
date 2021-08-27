@@ -18,7 +18,6 @@ import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
 import config from '../shared/constant/config';
-import qaConfig from '../shared/constant/qanet.config';
 import Deferred from 'promise-deferred';
 
 export interface ISanitizedEvent {
@@ -89,10 +88,9 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     this.logger.debug('Init Network');
     for (const network of networks) {
       const provider = new WsProvider(network.URL);
-      const networkConfig = network.NETWORK === 'QANET' ? qaConfig : config;
       const api = await ApiPromise.create({
         provider,
-        types: networkConfig,
+        types: config,
       });
 
       await api.isReady;
@@ -112,7 +110,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
       for (let i: number = blockNumber + 1; i <= Number(latestBlock.number); i += 1) {
         const {stopRequested} = this.networkMap.get(network);
-        
+
         if (stopRequested) {
           const {stopPromise} = this.networkMap.get(network);
           stopPromise.resolve();
@@ -242,7 +240,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       data: {free: balance},
     } = await networkProp.api.query.system.account(address);
     // TODO:https://cerenetwork.atlassian.net/browse/CBI-796
-    const decimal = network === "QANET" ? 15: 10;
+    const decimal = 10;
     const result = await formatBalance(balance, {decimals: decimal});
     return result;
   }
