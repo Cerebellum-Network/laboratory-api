@@ -10,7 +10,7 @@ interface AccountData {
 
 @Injectable()
 export class PolygonService {
-  public logger = new Logger(PolygonService.name);
+  private logger = new Logger(PolygonService.name);
 
   public provider: Map<string, {provider: Web3}> = new Map<string, {provider: Web3}>();
 
