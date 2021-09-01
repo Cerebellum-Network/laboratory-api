@@ -8,24 +8,19 @@ import {Repository} from 'typeorm';
 import {validatorStatus} from './validatorStatus.enum';
 import {Cron} from '@nestjs/schedule';
 import config from '../shared/constant/config';
+import {AccountData, IBalanceService} from './balance.interface';
 
 export interface NetworkProp {
   api: ApiPromise;
 }
 
-interface AccountData {
-  address: string;
-  name: string;
-  minBalance: number;
-}
-
 @Injectable()
-export class HealthService {
-  public logger = new Logger(HealthService.name);
+export class HealthService implements IBalanceService {
+  private logger = new Logger(HealthService.name);
 
-  public network: Map<string, {api: ApiPromise}> = new Map<string, {api: ApiPromise}>();
+  private network: Map<string, {api: ApiPromise}> = new Map<string, {api: ApiPromise}>();
 
-  public accounts: Map<string, {account: [AccountData]}> = new Map<string, {account: [AccountData]}>();
+  private accounts: Map<string, {account: [AccountData]}> = new Map<string, {account: [AccountData]}>();
 
   private blockDifference = Number(this.configService.get('BLOCK_DIFFERENCE'));
 
@@ -38,7 +33,34 @@ export class HealthService {
     this.loadHealthAccount();
   }
 
-  public async init() {
+  /**
+   * Has network or not
+   * @param network network name
+   * @returns boolean
+   */
+  public hasNetwork(network: string): boolean {
+    return this.network.has(network);
+  }
+
+  /**
+   * Has account or not
+   * @param account account nam
+   * @returns boolean
+   */
+  public hasAccount(account: string): boolean{
+    return this.accounts.has(account);
+  }
+
+  /**
+   * Fetch account details
+   * @param network network name
+   * @returns account data
+   */
+  public getAccount(network: string): { account: [AccountData] }{
+    return this.accounts.get(network);
+  }
+
+  public async init(): Promise<void> {
     const networks = JSON.parse(this.configService.get('NETWORKS'));
     for (const network of networks) {
       const provider = new WsProvider(network.URL);

@@ -1,20 +1,15 @@
 import {Injectable, Logger} from '@nestjs/common';
 import Web3 from 'web3';
 import {ConfigService} from '../config/config.service';
-
-interface AccountData {
-  address: string;
-  name: string;
-  minBalance: number;
-}
+import {AccountData, IBalanceService} from './balance.interface'
 
 @Injectable()
-export class PolygonService {
+export class PolygonService implements IBalanceService{
   private logger = new Logger(PolygonService.name);
 
-  public provider: Map<string, {provider: Web3}> = new Map<string, {provider: Web3}>();
+  private provider: Map<string, {provider: Web3}> = new Map<string, {provider: Web3}>();
 
-  public accounts: Map<string, {account: [AccountData]}> = new Map<string, {account: [AccountData]}>();
+  private accounts: Map<string, {account: [AccountData]}> = new Map<string, {account: [AccountData]}>();
 
   public constructor(private readonly configService: ConfigService) {
     this.inti();
@@ -32,17 +27,30 @@ export class PolygonService {
   }
 
   /**
-   * Fetch balance of account
-   * @param network network name
-   * @param address address
-   * @returns 
+   * Check network is correct or not
+   * @param network network name 
+   * @returns boolean
    */
-  public async fetchBalance(network: string, address: string): Promise<any> {
-    this.logger.debug(`About to fetch Balance of ${address}`);
-    const {provider} = this.provider.get(network);
-    const balance = await provider.eth.getBalance(address);
-    const balanceMatic = await provider.utils.fromWei(balance, 'ether');
-    return balanceMatic;
+  public hasNetwork(network: string): boolean{
+    return this.provider.has(network);
+  }
+
+  /**
+   * Check account is correct or not
+   * @param account account name
+   * @returns boolean
+   */
+  public hasAccount(account: string): boolean{
+    return this.accounts.has(account);
+  }
+
+  /**
+   * Fetch account details 
+   * @param network network name
+   * @returns AccountData
+   */
+  public getAccount(network: string): { account: [AccountData] }{
+    return this.accounts.get(network);
   }
 
   /**
