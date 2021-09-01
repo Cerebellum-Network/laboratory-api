@@ -12,13 +12,13 @@ export class PolygonService implements IBalanceService{
   private accounts: Map<string, {account: [AccountData]}> = new Map<string, {account: [AccountData]}>();
 
   public constructor(private readonly configService: ConfigService) {
-    this.inti();
+    this.init();
   }
 
   /**
    * Initialize accounts and provider
    */
-  private inti() {
+  private init() {
     const healthAccounts = JSON.parse(this.configService.get('POLYGON_ACCOUNTS'));
     healthAccounts.forEach((element) => {
       this.accounts.set(element.network, {account: element.accounts});
