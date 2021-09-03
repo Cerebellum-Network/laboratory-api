@@ -9,7 +9,6 @@ import {
 import {HealthService} from './health.service';
 import {BlockStatusDto} from './dto/block-status.dto';
 import {Response} from 'express';
-// import {PolygonService} from './polygon.service';
 
 @Controller('health')
 @ApiInternalServerErrorResponse({description: 'Internal server error.'})
@@ -18,7 +17,7 @@ import {Response} from 'express';
 export class HealthController {
   public constructor(
     @Inject(HealthService)
-    private readonly healthService: HealthService
+    private readonly healthService: HealthService,
   ) {}
 
   @ApiResponse({status: 200, description: 'System health fetched successfully.'})
@@ -37,11 +36,10 @@ export class HealthController {
   public async blockStatus(@Param('network') network: string): Promise<BlockStatusDto> {
     try {
       const health = await this.healthService.blockStatus(network);
-      return health
+      return health;
     } catch (error) {
       throw new BadRequestException(error.message);
     }
-    
   }
 
   @Get('finalization/:network')
@@ -50,32 +48,30 @@ export class HealthController {
   public async finalization(@Param('network') network: string, @Res() res: Response): Promise<any> {
     try {
       const diff = await this.healthService.finalization(network);
-    if (diff) {
-      res.status(HttpStatus.NOT_FOUND).send();
-    } else {
-      res.status(HttpStatus.NO_CONTENT).send();
-    }
+      if (diff) {
+        res.status(HttpStatus.NOT_FOUND).send();
+      } else {
+        res.status(HttpStatus.NO_CONTENT).send();
+      }
     } catch (error) {
       throw new BadRequestException(error.message);
     }
-    
   }
 
   @Get('block-production/:network')
   @ApiResponse({status: 204, description: 'Block production is healthy.'})
   @ApiNotFoundResponse({description: 'Block production is unhealthy.'})
   public async blockProduction(@Param('network') network: string, @Res() res: Response): Promise<any> {
-   try {
-    const diff = await this.healthService.blockProduction(network);
-    if (diff) {
-      res.status(HttpStatus.NO_CONTENT).send();
-    } else {
-      res.status(HttpStatus.NOT_FOUND).send();
+    try {
+      const diff = await this.healthService.blockProduction(network);
+      if (diff) {
+        res.status(HttpStatus.NO_CONTENT).send();
+      } else {
+        res.status(HttpStatus.NOT_FOUND).send();
+      }
+    } catch (error) {
+      throw new BadRequestException(error.message);
     }
-   } catch (error) {
-    throw new BadRequestException(error.message);
-   }
-   
   }
 
   @Get('node-dropped/:network')
@@ -84,15 +80,14 @@ export class HealthController {
   public async nodeDropped(@Param('network') network: string, @Res() res: Response): Promise<any> {
     try {
       const result = await this.healthService.nodeDropped(network);
-    if (result) {
-      res.status(HttpStatus.NO_CONTENT).send();
-    } else {
-      res.status(HttpStatus.NOT_FOUND).send();
-    }
+      if (result) {
+        res.status(HttpStatus.NO_CONTENT).send();
+      } else {
+        res.status(HttpStatus.NOT_FOUND).send();
+      }
     } catch (error) {
       throw new BadRequestException(error.message);
     }
-    
   }
 
   @Get('node-dropped-status/:network')
@@ -104,7 +99,6 @@ export class HealthController {
     } catch (error) {
       throw new BadRequestException(error.message);
     }
-    
   }
 
   @Get('balances/:blockchain/:network')
@@ -142,6 +136,5 @@ export class HealthController {
     } catch (error) {
       throw new BadRequestException(error.message);
     }
-   
   }
 }
