@@ -113,6 +113,7 @@ export class CereNetwork implements IBlockchain {
 
   /**
    * Node dropped status
+   * @param network network name
    * @returns slashed validator
    */
   public async nodeDroppedStatus(network: string): Promise<any> {
@@ -216,6 +217,7 @@ export class CereNetwork implements IBlockchain {
 
   /**
    * Node dropped.
+   * @param network network name
    * @returns notified status
    */
   public async nodeDropped(network: string): Promise<any> {
