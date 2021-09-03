@@ -41,9 +41,7 @@ export class HealthService {
     @InjectRepository(ValidatorEntity)
     private readonly validatorEntityRepository: Repository<ValidatorEntity>,
   ) {
-    this.initCereNetwork();
-    this.loadHealthAccount();
-    this.initPolygon();
+    this.init();
 
     const cereBlockchain = new CereNetwork(this.cereNetwork, this.cereAccounts);
     const polygonBlockchain = new PolygonNetwork(this.polygonNetwork, this.polygonAccounts);
@@ -51,29 +49,26 @@ export class HealthService {
     this.blockchain.set(polygon, polygonBlockchain);
   }
 
-  private async initCereNetwork(): Promise<void> {
-    const networks = JSON.parse(this.configService.get('NETWORKS'));
-    for (const network of networks) {
-      const provider = new WsProvider(network.URL);
-      const api = await ApiPromise.create({
-        provider,
-        types: config,
-      });
-      await api.isReady;
-      const chain = await api.rpc.system.chain();
-      this.logger.log(`Connected to ${chain}`);
-
-      this.cereNetwork.set(network.NETWORK, {api});
-    }
-  }
-
-  private initPolygon(): void {
-    const polygonNetwork = JSON.parse(this.configService.get('HEALTH_ACCOUNTS'));
-    polygonNetwork.forEach((element) => {
-      if (element.blockchain === 'Polygon') {
+  private init(): void {
+    const healthAccounts = JSON.parse(this.configService.get('HEALTH_ACCOUNTS'));
+    healthAccounts.forEach((element) => {
+      if (element.blockchain === polygon) {
         element.data.forEach((data) => {
           this.polygonAccounts.set(data.network, {account: data.accounts});
           this.polygonNetwork.set(data.network, {api: new Web3(new Web3.providers.HttpProvider(data.rpc))});
+        });
+      } else if (element.blockchain === cere) {
+        element.data.forEach(async (data) => {
+          this.cereAccounts.set(data.network, {account: data.accounts});
+          const provider = new WsProvider(data.rpc);
+          const api = await ApiPromise.create({
+            provider,
+            types: config,
+          });
+          await api.isReady;
+          const chain = await api.rpc.system.chain();
+          this.logger.log(`Connected to ${chain}`);
+          this.cereNetwork.set(data.network, {api});
         });
       }
     });
@@ -142,7 +137,7 @@ export class HealthService {
    * Run cron job At minute 40 to check for slashed validator node.
    */
   @Cron('40 * * * *')
-  public async validatorSlashed() {
+  public async validatorSlashed(): Promise<void> {
     this.logger.log(`About to run cron for validator slashing`);
     for (const [key, {api}] of this.cereNetwork) {
       const currentEra = await api.query.staking.currentEra();
@@ -253,16 +248,6 @@ export class HealthService {
           resolve(element.method.args[0]);
         }
       });
-    });
-  }
-
-  /**
-   * Load Health accounts
-   */
-  private loadHealthAccount() {
-    const healthAccounts = JSON.parse(this.configService.get('HEALTH_ACCOUNTS_BALANCE'));
-    healthAccounts.forEach((element) => {
-      this.cereAccounts.set(element.network, {account: element.accounts});
     });
   }
 
