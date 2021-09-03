@@ -1,6 +1,9 @@
 import {Logger} from '@nestjs/common';
 import {IBlockchain, Wallet} from './blockchain.interface';
 import Web3 from "web3";
+import {ConfigService} from '../config/config.service';
+
+const polygon = 'POLYGON';
 
 export class PolygonNetwork implements IBlockchain {
   private logger = new Logger(PolygonNetwork.name);
@@ -9,30 +12,36 @@ export class PolygonNetwork implements IBlockchain {
 
   private accounts: Map<string, {account: [Wallet]}> = new Map<string, {account: [Wallet]}>();
 
-  public constructor(_network, _accounts) {
-    this.network = _network;
-    this.accounts = _accounts;
+  public constructor(private readonly configService: ConfigService) {
+    this.init()
+  }
+
+  private init(): void {
+    const healthAccounts = JSON.parse(this.configService.get('HEALTH_ACCOUNTS'));
+    healthAccounts.forEach((element) => {
+      if (element.blockchain === polygon) {
+        element.data.forEach((data) => {
+          this.accounts.set(data.network, {account: data.accounts});
+          this.network.set(data.network, {api: new Web3(new Web3.providers.HttpProvider(data.rpc))});
+        });
+      }
+    });
   }
 
   public hasNetwork(network: string): boolean {
-    return this.network.has(network);
-  }
-
-  public hasWallet(wallet: string): boolean {
-    return this.accounts.has(wallet);
+    if (!this.network.has(network)) {
+      throw new Error("Invalid network");
+    }
+    return true;
   }
 
   public getNetwork(network: string) {
-    if (!this.hasNetwork(network)) {
-      throw new Error("Invalid Network");
-    }
+    this.hasNetwork(network);
     return this.network.get(network);
   }
 
   public getWallet(network: string, wallet: string) {
-    if (!this.hasWallet(network)) {
-      throw new Error("Invalid Network");
-    }
+    this.hasNetwork(network);
     const {account} = this.accounts.get(network);
     const walletData = account.find((element) => element.name === wallet);
     if (walletData === undefined) {
@@ -42,9 +51,7 @@ export class PolygonNetwork implements IBlockchain {
   }
 
   public getWallets(network: string) {
-    if (!this.hasWallet(network)) {
-      throw new Error("Invalid Network");
-    }
+    this.hasNetwork(network);
     const {account} = this.accounts.get(network);
     return account
   }
