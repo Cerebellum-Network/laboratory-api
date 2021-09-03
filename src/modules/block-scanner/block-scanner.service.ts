@@ -79,6 +79,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public startScanning() {
     this.logger.log(`About to start scanning network`);
+    console.log('startScanning');
     for (const [key, value] of this.networkMap) {
       this.processOldBlock(value.api, key);
     }
@@ -105,7 +106,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   // Process the blocks from where it has been leftout to current block
   public async processOldBlock(api: ApiPromise, network: string): Promise<void> {
     try {
-      const blockNumber = await this.fetchBlockNumber(network);
+      // const blockNumber = await this.fetchBlockNumber(network);
+      const blockNumber = 1432683;
       let latestBlock = await api.rpc.chain.getHeader();
 
       for (let i: number = blockNumber + 1; i <= Number(latestBlock.number); i += 1) {
@@ -443,9 +445,15 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         'staking.bond',
         'staking.validate',
         'staking.nominate',
+        'chainBridge.acknowledgeProposal',
       ];
+      console.log(`Extrinsic ${JSON.stringify(extrinsic)}`);
       extrinsic.forEach(async (txn, index) => {
         if (transferMethods.includes(txn.method)) {
+          if (txn.method === 'chainBridge.acknowledgeProposal') {
+            const data = await this.processChainbridge(txn.events);
+            console.log(`data ${data}`);
+          }
           txn.events.forEach((value) => {
             const method = value.method.split('.');
             const eventData = {
@@ -494,6 +502,22 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       this.logger.error(error.toString());
       this.init();
     }
+  }
+
+  private processChainbridge(events: any) {
+    events.forEach(value => {
+      let result;
+      if (value.method === 'balances.Transfer') {
+        const sender = value.data[0];
+        // value.data.shift();
+        // const args = (value.data).toString();
+        const args = `${value.data[1]}, ${value.data[2]}`;
+        console.log(`sender ${sender}`);
+        console.log(`args: ${args}`);
+        result = {sender, args};
+      }
+      return result
+    })
   }
 
   private parseGenericCall(genericCall: GenericCall, registry: Registry): ISanitizedCall {
