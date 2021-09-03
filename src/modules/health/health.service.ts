@@ -1,3 +1,4 @@
+import {IBlockchain, Wallet} from './blockchain.interface';
 import {ValidatorEntity} from './entities/validator.entity';
 import {Injectable, Logger} from '@nestjs/common';
 import {ApiPromise, WsProvider} from '@polkadot/api';
@@ -8,19 +9,30 @@ import {Repository} from 'typeorm';
 import {validatorStatus} from './validatorStatus.enum';
 import {Cron} from '@nestjs/schedule';
 import config from '../shared/constant/config';
-import {AccountData, IBalanceService} from './balance.interface';
+import {CereNetwork} from './cere.service';
+import {PolygonNetwork} from './polygon.service';
+import Web3 from 'web3';
+
+const cere = 'CERE';
+const polygon = 'POLYGON';
 
 export interface NetworkProp {
   api: ApiPromise;
 }
 
 @Injectable()
-export class HealthService implements IBalanceService {
+export class HealthService {
   private logger = new Logger(HealthService.name);
 
-  private network: Map<string, {api: ApiPromise}> = new Map<string, {api: ApiPromise}>();
+  private cereNetwork: Map<string, {api: ApiPromise}> = new Map<string, {api: ApiPromise}>();
 
-  private accounts: Map<string, {account: [AccountData]}> = new Map<string, {account: [AccountData]}>();
+  private cereAccounts: Map<string, {account: [Wallet]}> = new Map<string, {account: [Wallet]}>();
+
+  private polygonNetwork: Map<string, {api: Web3}> = new Map<string, {api: Web3}>();
+
+  private polygonAccounts: Map<string, {account: [Wallet]}> = new Map<string, {account: [Wallet]}>();
+
+  private blockchain: Map<string, IBlockchain> = new Map<string, IBlockchain>();
 
   private blockDifference = Number(this.configService.get('BLOCK_DIFFERENCE'));
 
@@ -29,38 +41,17 @@ export class HealthService implements IBalanceService {
     @InjectRepository(ValidatorEntity)
     private readonly validatorEntityRepository: Repository<ValidatorEntity>,
   ) {
-    this.init();
+    this.initCereNetwork();
     this.loadHealthAccount();
+    this.initPolygon();
+
+    const cereBlockchain = new CereNetwork(this.cereNetwork, this.cereAccounts);
+    const polygonBlockchain = new PolygonNetwork(this.polygonNetwork, this.polygonAccounts);
+    this.blockchain.set(cere, cereBlockchain);
+    this.blockchain.set(polygon, polygonBlockchain);
   }
 
-  /**
-   * Has network or not
-   * @param network network name
-   * @returns boolean
-   */
-  public hasNetwork(network: string): boolean {
-    return this.network.has(network);
-  }
-
-  /**
-   * Has account or not
-   * @param account account nam
-   * @returns boolean
-   */
-  public hasAccount(account: string): boolean{
-    return this.accounts.has(account);
-  }
-
-  /**
-   * Fetch account details
-   * @param network network name
-   * @returns account data
-   */
-  public getAccount(network: string): { account: [AccountData] }{
-    return this.accounts.get(network);
-  }
-
-  public async init(): Promise<void> {
+  private async initCereNetwork(): Promise<void> {
     const networks = JSON.parse(this.configService.get('NETWORKS'));
     for (const network of networks) {
       const provider = new WsProvider(network.URL);
@@ -72,8 +63,20 @@ export class HealthService implements IBalanceService {
       const chain = await api.rpc.system.chain();
       this.logger.log(`Connected to ${chain}`);
 
-      this.network.set(network.NETWORK, {api});
+      this.cereNetwork.set(network.NETWORK, {api});
     }
+  }
+
+  private initPolygon(): void {
+    const polygonNetwork = JSON.parse(this.configService.get('HEALTH_ACCOUNTS'));
+    polygonNetwork.forEach((element) => {
+      if (element.blockchain === 'Polygon') {
+        element.data.forEach((data) => {
+          this.polygonAccounts.set(data.network, {account: data.accounts});
+          this.polygonNetwork.set(data.network, {api: new Web3(new Web3.providers.HttpProvider(data.rpc))});
+        });
+      }
+    });
   }
 
   /**
@@ -83,10 +86,8 @@ export class HealthService implements IBalanceService {
    */
   public async healthCheck(network: string): Promise<any> {
     this.logger.debug(`About to fetch system health`);
-    if (!this.network.has(network)) {
-      return 'Invalid network type.';
-    }
-    const {api} = this.network.get(network);
+    const blockchainNetwork: IBlockchain = this.getBlockchainInstance(cere);
+    const {api} = blockchainNetwork.getNetwork(network);
     const result = await api.rpc.system.health();
     return result;
   }
@@ -98,7 +99,8 @@ export class HealthService implements IBalanceService {
    */
   public async blockStatus(network: string): Promise<BlockStatusDto> {
     this.logger.debug(`About to fetch block status`);
-    const {api} = this.network.get(network);
+    const blockchainNetwork: IBlockchain = this.getBlockchainInstance(cere);
+    const {api} = blockchainNetwork.getNetwork(network);
     const {best, finalized} = await this.blockNumber(api);
     if (best - finalized > this.blockDifference) {
       return new BlockStatusDto(true, finalized, best);
@@ -108,7 +110,8 @@ export class HealthService implements IBalanceService {
 
   public async finalization(network: string): Promise<boolean> {
     this.logger.debug(`About to fetch block status`);
-    const {api} = this.network.get(network);
+    const blockchainNetwork: IBlockchain = this.getBlockchainInstance(cere);
+    const {api} = blockchainNetwork.getNetwork(network);
     const {best, finalized} = await this.blockNumber(api);
     if (best - finalized > this.blockDifference) {
       return true;
@@ -118,7 +121,8 @@ export class HealthService implements IBalanceService {
 
   public async blockProduction(network: string): Promise<boolean> {
     this.logger.log(`About to fetch block production time`);
-    const {api} = this.network.get(network);
+    const blockchainNetwork: IBlockchain = this.getBlockchainInstance(cere);
+    const {api} = blockchainNetwork.getNetwork(network);
     const {block} = await api.rpc.chain.getBlock();
 
     const {header, extrinsics} = block;
@@ -140,7 +144,7 @@ export class HealthService implements IBalanceService {
   @Cron('40 * * * *')
   public async validatorSlashed() {
     this.logger.log(`About to run cron for validator slashing`);
-    for (const [key, {api}] of this.network) {
+    for (const [key, {api}] of this.cereNetwork) {
       const currentEra = await api.query.staking.currentEra();
       const result = await api.query.staking.unappliedSlashes(currentEra.toString());
       if (result.length === 0) {
@@ -173,6 +177,8 @@ export class HealthService implements IBalanceService {
    * @returns notified status
    */
   public async nodeDropped(network: string): Promise<any> {
+    const blockchainNetwork: IBlockchain = this.getBlockchainInstance(cere);
+    blockchainNetwork.getNetwork(network);
     const validator = await this.validatorEntityRepository.find({status: validatorStatus.NEW, network});
     await this.validatorEntityRepository
       .createQueryBuilder()
@@ -192,36 +198,40 @@ export class HealthService implements IBalanceService {
    * @returns slashed validator
    */
   public async nodeDroppedStatus(network: string): Promise<any> {
+    const blockchainNetwork: IBlockchain = this.getBlockchainInstance(cere);
+    blockchainNetwork.getNetwork(network);
     const validator = await this.validatorEntityRepository.find({where: {network}, take: 10});
     return validator;
   }
 
   /**
    * Check Minimum balance of all accounts in a network
+   * @param blockchain blockchain type
    * @param network Network type
    * @returns boolean
    */
-  public async checkMinBalance(network: string): Promise<any> {
+  public async checkMinBalance(blockchain: string, network: string): Promise<any> {
     this.logger.debug(`About to check account minimum balance`);
-    const {account} = this.accounts.get(network);
-    const {api} = this.network.get(network);
-    const {status, result} = await this.validateBalance(api, account);
+    const blockchainNetwork: IBlockchain = this.getBlockchainInstance(blockchain);
+    const wallets = blockchainNetwork.getWallets(network);
+    const {api} = blockchainNetwork.getNetwork(network);
+    const {status, result} = await this.validateBalance(api, wallets, blockchainNetwork);
     return {status, result};
   }
 
   /**
    * Check the min balance of account
+   * @param blockchain blockchain type
    * @param network API promise
-   * @param accountName account name
+   * @param wallet account name
    * @returns status result
    */
-  public async checkMinBalanceOfAccount(network: string, accountName: string): Promise<any>{
+  public async checkMinBalanceOfWallet(blockchain: string, network: string, wallet: string): Promise<any> {
     this.logger.debug(`About to check account minimum balance`);
-    const {account} = this.accounts.get(network);
-    const found = account.find(element => element.name === accountName);
-    const accountArray = [found];
-    const {api} = this.network.get(network);
-    const {status, result} = await this.validateBalance(api, accountArray);
+    const blockchainNetwork: IBlockchain = this.getBlockchainInstance(blockchain);
+    const {api} = blockchainNetwork.getNetwork(network);
+    const account = blockchainNetwork.getWallet(network, wallet);
+    const {status, result} = await this.validateBalance(api, [account], blockchainNetwork);
     return {status, result};
   }
 
@@ -252,7 +262,7 @@ export class HealthService implements IBalanceService {
   private loadHealthAccount() {
     const healthAccounts = JSON.parse(this.configService.get('HEALTH_ACCOUNTS_BALANCE'));
     healthAccounts.forEach((element) => {
-      this.accounts.set(element.network, {account: element.accounts});
+      this.cereAccounts.set(element.network, {account: element.accounts});
     });
   }
 
@@ -262,25 +272,39 @@ export class HealthService implements IBalanceService {
    * @param accounts accounts object
    * @returns status and result
    */
-  private async validateBalance(api: ApiPromise, accounts: AccountData[]): Promise<any> {
+  private async validateBalance(
+    api: Web3 | ApiPromise,
+    accounts: Wallet[],
+    blockchainNetwork: IBlockchain,
+  ): Promise<any> {
     // eslint-disable-next-line prefer-const
     let result = [];
     let status = true;
-    const decimal = api.registry.chainDecimals;
     for await (const element of accounts) {
       const {address, minBalance, name} = element;
-      const accountData = await api.query.system.account(address);
-      const freeBalance = +accountData.data.free / 10 ** +decimal;
-      if (freeBalance <= minBalance) {
+      const balance = await blockchainNetwork.getBalance(address, api);
+      if (+balance <= minBalance) {
         status = false;
         const data = {
           address,
           name,
-          freeBalance,
+          balance,
         };
         result.push(data);
       }
     }
-    return ({status, result});
+    return {status, result};
+  }
+
+  /**
+   * Get Blockchain instance
+   * @param blockchain blockchain name
+   * @returns Blockchain Instance
+   */
+  private getBlockchainInstance(blockchain: string) {
+    if (!this.blockchain.has(blockchain)) {
+      throw new Error('Invalid blockchain type');
+    }
+    return this.blockchain.get(blockchain);
   }
 }

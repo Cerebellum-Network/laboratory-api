@@ -1,11 +1,11 @@
 import {Logger} from '@nestjs/common';
+import {ApiPromise} from '@polkadot/api';
 import {IBlockchain, Wallet} from './blockchain.interface';
-import Web3 from "web3";
 
-export class PolygonNetwork implements IBlockchain {
-  private logger = new Logger(PolygonNetwork.name);
+export class CereNetwork implements IBlockchain {
+  private logger = new Logger(CereNetwork.name);
 
-  private network: Map<string, {api: Web3}> = new Map<string, {api: Web3}>();
+  private network: Map<string, {api: ApiPromise}> = new Map<string, {api: ApiPromise}>();
 
   private accounts: Map<string, {account: [Wallet]}> = new Map<string, {account: [Wallet]}>();
 
@@ -30,7 +30,7 @@ export class PolygonNetwork implements IBlockchain {
   }
 
   public getWallet(network: string, wallet: string) {
-    if (!this.hasWallet(network)) {
+    if (!this.hasNetwork(network)) {
       throw new Error("Invalid Network");
     }
     const {account} = this.accounts.get(network);
@@ -46,13 +46,14 @@ export class PolygonNetwork implements IBlockchain {
       throw new Error("Invalid Network");
     }
     const {account} = this.accounts.get(network);
-    return account
+    return account;
   }
 
-  public async getBalance(wallet: string, api: Web3): Promise<number> {
-    this.logger.debug(`About to fetch balance for ${wallet}`);
-    const balance = await api.eth.getBalance(wallet);
-    const freeBalance = await api.utils.fromWei(balance, 'ether');
-    return +freeBalance;
+  public async getBalance(wallet: string, api: ApiPromise): Promise<number> {
+    this.logger.debug(`About to fetch balance for ${wallet}`)
+    const decimal = api.registry.chainDecimals;
+    const accountData = await api.query.system.account(wallet);
+    const freeBalance = +accountData.data.free / 10 ** +decimal;
+    return freeBalance;
   }
 }
