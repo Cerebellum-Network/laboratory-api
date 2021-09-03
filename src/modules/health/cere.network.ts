@@ -1,16 +1,16 @@
-import {ConfigService} from "../config/config.service";
+import {ConfigService} from '../config/config.service';
 import {Logger} from '@nestjs/common';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import config from '../shared/constant/config';
 import {IBlockchain, Wallet} from './blockchain.interface';
-import {Repository} from "typeorm";
-import {InjectRepository} from "@nestjs/typeorm";
-import {ValidatorEntity} from "./entities/validator.entity";
-import {validatorStatus} from "./validatorStatus.enum";
-import {Cron} from "@nestjs/schedule";
-import {BlockStatusDto} from "./dto/block-status.dto";
+import {Repository} from 'typeorm';
+import {InjectRepository} from '@nestjs/typeorm';
+import {ValidatorEntity} from './entities/validator.entity';
+import {validatorStatus} from './validatorStatus.enum';
+import {Cron} from '@nestjs/schedule';
+import {BlockStatusDto} from './dto/block-status.dto';
 
-const cere = 'CERE';
+export const cere = 'CERE';
 
 export class CereNetwork implements IBlockchain {
   private logger = new Logger(CereNetwork.name);
@@ -49,6 +49,11 @@ export class CereNetwork implements IBlockchain {
     });
   }
 
+  /**
+   * Check for specific network
+   * @param network network name
+   * @returns boolean
+   */
   public hasNetwork(network: string): boolean {
     if (!this.network.has(network)) {
       throw new Error('Invalid network');
@@ -56,6 +61,11 @@ export class CereNetwork implements IBlockchain {
     return true;
   }
 
+  /**
+   * Get network api
+   * @param network network name
+   * @returns network api
+   */
   public getNetwork(network: string) {
     if (!this.hasNetwork(network)) {
       throw new Error('Invalid Network');
@@ -63,6 +73,12 @@ export class CereNetwork implements IBlockchain {
     return this.network.get(network);
   }
 
+  /**
+   * Get wallet of specific network
+   * @param network network name
+   * @param wallet wallet name
+   * @returns wallet
+   */
   public getWallet(network: string, wallet: string) {
     if (!this.hasNetwork(network)) {
       throw new Error('Invalid Network');
@@ -75,13 +91,20 @@ export class CereNetwork implements IBlockchain {
     return walletData;
   }
 
+  /**
+   * Get wallet for specific network
+   * @param network network name
+   * @returns array of wallet
+   */
   public getWallets(network: string) {
     const {account} = this.accounts.get(network);
     return account;
   }
 
-  public async getBalance(wallet: string, api: ApiPromise): Promise<number> {
+  public async getBalance(wallet: string, network: string): Promise<number> {
     this.logger.debug(`About to fetch balance for ${wallet}`);
+    this.hasNetwork(network);
+    const {api} = this.getNetwork(network);
     const decimal = api.registry.chainDecimals;
     const accountData = await api.query.system.account(wallet);
     const freeBalance = +accountData.data.free / 10 ** +decimal;

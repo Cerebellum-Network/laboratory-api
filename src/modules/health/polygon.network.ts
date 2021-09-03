@@ -1,10 +1,11 @@
-import {Logger} from '@nestjs/common';
+import {Injectable, Logger} from '@nestjs/common';
 import {IBlockchain, Wallet} from './blockchain.interface';
-import Web3 from "web3";
+import Web3 from 'web3';
 import {ConfigService} from '../config/config.service';
 
-const polygon = 'POLYGON';
+export const polygon = 'POLYGON';
 
+@Injectable()
 export class PolygonNetwork implements IBlockchain {
   private logger = new Logger(PolygonNetwork.name);
 
@@ -13,7 +14,7 @@ export class PolygonNetwork implements IBlockchain {
   private accounts: Map<string, {account: [Wallet]}> = new Map<string, {account: [Wallet]}>();
 
   public constructor(private readonly configService: ConfigService) {
-    this.init()
+    this.init();
   }
 
   private init(): void {
@@ -30,7 +31,7 @@ export class PolygonNetwork implements IBlockchain {
 
   public hasNetwork(network: string): boolean {
     if (!this.network.has(network)) {
-      throw new Error("Invalid network");
+      throw new Error('Invalid network');
     }
     return true;
   }
@@ -45,7 +46,7 @@ export class PolygonNetwork implements IBlockchain {
     const {account} = this.accounts.get(network);
     const walletData = account.find((element) => element.name === wallet);
     if (walletData === undefined) {
-      throw new Error("Invalid wallet name");
+      throw new Error('Invalid wallet name');
     }
     return walletData;
   }
@@ -53,11 +54,13 @@ export class PolygonNetwork implements IBlockchain {
   public getWallets(network: string) {
     this.hasNetwork(network);
     const {account} = this.accounts.get(network);
-    return account
+    return account;
   }
 
-  public async getBalance(wallet: string, api: Web3): Promise<number> {
+  public async getBalance(wallet: string, network: string): Promise<number> {
     this.logger.debug(`About to fetch balance for ${wallet}`);
+    this.hasNetwork(network);
+    const {api} = this.getNetwork(network);
     const balance = await api.eth.getBalance(wallet);
     const freeBalance = await api.utils.fromWei(balance, 'ether');
     return +freeBalance;
