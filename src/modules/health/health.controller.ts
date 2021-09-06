@@ -1,4 +1,4 @@
-import {BadRequestException, Controller, Get, HttpStatus, Inject, Param, Res} from '@nestjs/common';
+import {BadRequestException, Controller, Get, HttpStatus, Inject, Param, Res, Query} from '@nestjs/common';
 import {
   ApiInternalServerErrorResponse,
   ApiGatewayTimeoutResponse,
@@ -101,13 +101,18 @@ export class HealthController {
     }
   }
 
-  @Get('balances/:blockchain/:network')
+  @Get('balances/:network')
   public async checkMinBalance(
     @Param('network') network: string,
-    @Param('blockchain') blockchain: string,
+    @Query('blockchain') blockchain: string,
     @Res() res: Response,
   ): Promise<any> {
     try {
+      if (blockchain === undefined || null) {
+        // eslint-disable-next-line no-param-reassign
+        blockchain = 'CERE';
+      }
+      console.log(blockchain);
       const {status, result} = await this.healthService.checkMinBalance(blockchain, network);
       if (status) {
         res.status(HttpStatus.NO_CONTENT).send();
@@ -119,14 +124,19 @@ export class HealthController {
     }
   }
 
-  @Get('balances/:blockchain/:network/:wallet')
+  @Get('balances/:network/:wallet')
   public async checkMinBalanceForAccount(
-    @Param('blockchain') blockchain: string,
+    @Query('blockchain') blockchain: string,
     @Param('network') network: string,
     @Param('wallet') wallet: string,
     @Res() res: Response,
   ): Promise<any> {
     try {
+      if (blockchain === undefined || null) {
+        // eslint-disable-next-line no-param-reassign
+        blockchain = 'CERE';
+      }
+      console.log(blockchain);
       const {status, result} = await this.healthService.checkMinBalanceOfWallet(blockchain, network, wallet);
       if (status) {
         res.status(HttpStatus.NO_CONTENT).send();
