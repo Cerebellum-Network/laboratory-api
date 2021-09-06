@@ -22,8 +22,8 @@ export class HealthService {
    */
   public async healthCheck(network: string): Promise<any> {
     this.logger.debug(`About to fetch system health`);
-    const blockchain = this.getBlockchainInstance(cere);
-    const result = await blockchain.checkHealth(network);
+    const currentBlockchain = this.getBlockchainInstance(cere);
+    const result = await currentBlockchain.checkHealth(network);
     return result;
   }
 
@@ -34,22 +34,22 @@ export class HealthService {
    */
   public async blockStatus(network: string): Promise<BlockStatusDto> {
     this.logger.debug(`About to fetch block status`);
-    const blockchain = this.getBlockchainInstance(cere);
-    const result = await blockchain.getBlockStatus(network);
+    const currentBlockchain = this.getBlockchainInstance(cere);
+    const result = await currentBlockchain.getBlockStatus(network);
     return result;
   }
 
   public async finalization(network: string): Promise<boolean> {
     this.logger.debug(`About to fetch block status`);
-    const blockchain = this.getBlockchainInstance(cere);
-    const result = await blockchain.getNodeFinalizationStatus(network);
+    const currentBlockchain = this.getBlockchainInstance(cere);
+    const result = await currentBlockchain.getNodeFinalizationStatus(network);
     return result;
   }
 
   public async blockProduction(network: string): Promise<boolean> {
     this.logger.log(`About to fetch block production time`);
-    const blockchain = this.getBlockchainInstance(cere);
-    const result = await blockchain.getBlockProduction(network);
+    const currentBlockchain = this.getBlockchainInstance(cere);
+    const result = await currentBlockchain.getBlockProduction(network);
     return result;
   }
 
@@ -59,8 +59,8 @@ export class HealthService {
    * @returns notified status
    */
   public async nodeDropped(network: string): Promise<any> {
-    const blockchain = this.getBlockchainInstance(cere);
-    const result = await blockchain.getDroppedNode(network);
+    const currentBlockchain = this.getBlockchainInstance(cere);
+    const result = await currentBlockchain.getDroppedNode(network);
     return result;
   }
 
@@ -70,8 +70,8 @@ export class HealthService {
    * @returns slashed validator
    */
   public async nodeDroppedStatus(network: string): Promise<any> {
-    const blockchain = this.getBlockchainInstance(cere);
-    const result = await blockchain.getDroppedNodeStatus(network);
+    const currentBlockchain = this.getBlockchainInstance(cere);
+    const result = await currentBlockchain.getDroppedNodeStatus(network);
     return result;
   }
 
