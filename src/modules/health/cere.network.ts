@@ -79,12 +79,12 @@ export class CereNetwork implements IBlockchain {
    * @param wallet wallet name
    * @returns wallet
    */
-  public getWallet(network: string, wallet: string) {
+  public getWallet(network: string, walletName: string) {
     if (!this.hasNetwork(network)) {
       throw new Error('Invalid Network');
     }
     const {account} = this.accounts.get(network);
-    const walletData = account.find((element) => element.name === wallet);
+    const walletData = account.find((element) => element.name === walletName);
     if (walletData === undefined) {
       throw new Error('Invalid wallet name');
     }

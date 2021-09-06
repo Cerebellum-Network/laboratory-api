@@ -10,7 +10,7 @@ export interface IBlockchain {
   getBalance(wallet: string, network: string): Promise<number>;
   hasNetwork(network: string): boolean;
   getNetwork(network: string);
-  getWallet(network: string, wallet: string);
+  getWallet(network: string, walletName: string);
   getWallets(network: string);
   checkHealth?(network: string): Promise<any>;
   getBlockStatus?(network: string): Promise<BlockStatusDto>;

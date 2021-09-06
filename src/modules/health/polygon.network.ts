@@ -41,10 +41,10 @@ export class PolygonNetwork implements IBlockchain {
     return this.network.get(network);
   }
 
-  public getWallet(network: string, wallet: string) {
+  public getWallet(network: string, walletName: string) {
     this.hasNetwork(network);
     const {account} = this.accounts.get(network);
-    const walletData = account.find((element) => element.name === wallet);
+    const walletData = account.find((element) => element.name === walletName);
     if (walletData === undefined) {
       throw new Error('Invalid wallet name');
     }
