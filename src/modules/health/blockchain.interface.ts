@@ -12,11 +12,11 @@ export interface IBlockchain {
   getNetwork(network: string);
   getWallet(network: string, wallet: string);
   getWallets(network: string);
-  healthCheck?(network: string): Promise<any>;
-  blockStatus?(network: string): Promise<BlockStatusDto>;
-  finalization?(network: string): Promise<boolean>;
-  blockProduction?(network: string): Promise<boolean>;
-  validatorSlashed?(): Promise<void>;
-  nodeDropped?(network: string): Promise<any>;
-  nodeDroppedStatus?(network: string): Promise<any>;
+  checkHealth?(network: string): Promise<any>;
+  getBlockStatus?(network: string): Promise<BlockStatusDto>;
+  getNodeFinalizationStatus?(network: string): Promise<boolean>;
+  getBlockProduction?(network: string): Promise<boolean>;
+  getSlashedValidator?(): Promise<void>;
+  getDroppedNode?(network: string): Promise<any>;
+  getDroppedNodeStatus?(network: string): Promise<any>;
 }

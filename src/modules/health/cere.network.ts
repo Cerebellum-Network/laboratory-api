@@ -116,7 +116,7 @@ export class CereNetwork implements IBlockchain {
    * @param network network name
    * @returns slashed validator
    */
-  public async nodeDroppedStatus(network: string): Promise<any> {
+  public async getDroppedNodeStatus(network: string): Promise<any> {
     this.hasNetwork(network);
     const validator = await this.validatorEntityRepository.find({where: {network}, take: 10});
     return validator;
@@ -127,7 +127,7 @@ export class CereNetwork implements IBlockchain {
    * @param network network string
    * @returns system health
    */
-  public async healthCheck(network: string): Promise<any> {
+  public async checkHealth(network: string): Promise<any> {
     this.logger.debug(`About to fetch system health`);
     this.hasNetwork(network);
     const {api} = this.getNetwork(network);
@@ -140,7 +140,7 @@ export class CereNetwork implements IBlockchain {
    * @param network network string
    * @returns boolean based on difference
    */
-  public async blockStatus(network: string): Promise<BlockStatusDto> {
+  public async getBlockStatus(network: string): Promise<BlockStatusDto> {
     this.logger.debug(`About to fetch block status`);
     this.hasNetwork(network);
     const {api} = this.getNetwork(network);
@@ -151,7 +151,7 @@ export class CereNetwork implements IBlockchain {
     return new BlockStatusDto(false, finalized, best);
   }
 
-  public async finalization(network: string): Promise<boolean> {
+  public async getNodeFinalizationStatus(network: string): Promise<boolean> {
     this.logger.debug(`About to fetch block status`);
     this.hasNetwork(network);
     const {api} = this.getNetwork(network);
@@ -162,7 +162,7 @@ export class CereNetwork implements IBlockchain {
     return false;
   }
 
-  public async blockProduction(network: string): Promise<boolean> {
+  public async getBlockProduction(network: string): Promise<boolean> {
     this.logger.log(`About to fetch block production time`);
     this.hasNetwork(network);
     const {api} = this.getNetwork(network);
@@ -185,7 +185,7 @@ export class CereNetwork implements IBlockchain {
    * Run cron job At minute 40 to check for slashed validator node.
    */
   @Cron('40 * * * *')
-  public async validatorSlashed(): Promise<void> {
+  public async getSlashedValidator(): Promise<void> {
     this.logger.log(`About to run cron for validator slashing`);
     for (const [key, {api}] of this.network) {
       const currentEra = await api.query.staking.currentEra();
@@ -220,7 +220,7 @@ export class CereNetwork implements IBlockchain {
    * @param network network name
    * @returns notified status
    */
-  public async nodeDropped(network: string): Promise<any> {
+  public async getDroppedNode(network: string): Promise<any> {
     this.hasNetwork(network);
     const validator = await this.validatorEntityRepository.find({status: validatorStatus.NEW, network});
     await this.validatorEntityRepository

@@ -8,11 +8,11 @@ import {BlockStatusDto} from './dto/block-status.dto';
 export class HealthService {
   private logger = new Logger(HealthService.name);
 
-  private blockchain: Map<string, IBlockchain> = new Map<string, IBlockchain>();
+  private blockchains: Map<string, IBlockchain> = new Map<string, IBlockchain>();
 
   public constructor(private readonly cereNetwork: CereNetwork, private readonly polygonNetwork: PolygonNetwork) {
-    this.blockchain.set(cere, this.cereNetwork);
-    this.blockchain.set(polygon, this.polygonNetwork);
+    this.blockchains.set(cere, this.cereNetwork);
+    this.blockchains.set(polygon, this.polygonNetwork);
   }
 
   /**
@@ -23,7 +23,7 @@ export class HealthService {
   public async healthCheck(network: string): Promise<any> {
     this.logger.debug(`About to fetch system health`);
     const blockchain = this.getBlockchainInstance(cere);
-    const result = await blockchain.healthCheck(network);
+    const result = await blockchain.checkHealth(network);
     return result;
   }
 
@@ -35,21 +35,21 @@ export class HealthService {
   public async blockStatus(network: string): Promise<BlockStatusDto> {
     this.logger.debug(`About to fetch block status`);
     const blockchain = this.getBlockchainInstance(cere);
-    const result = await blockchain.blockStatus(network);
+    const result = await blockchain.getBlockStatus(network);
     return result;
   }
 
   public async finalization(network: string): Promise<boolean> {
     this.logger.debug(`About to fetch block status`);
     const blockchain = this.getBlockchainInstance(cere);
-    const result = await blockchain.finalization(network);
+    const result = await blockchain.getNodeFinalizationStatus(network);
     return result;
   }
 
   public async blockProduction(network: string): Promise<boolean> {
     this.logger.log(`About to fetch block production time`);
     const blockchain = this.getBlockchainInstance(cere);
-    const result = await blockchain.blockProduction(network);
+    const result = await blockchain.getBlockProduction(network);
     return result;
   }
 
@@ -60,7 +60,7 @@ export class HealthService {
    */
   public async nodeDropped(network: string): Promise<any> {
     const blockchain = this.getBlockchainInstance(cere);
-    const result = await blockchain.nodeDropped(network);
+    const result = await blockchain.getDroppedNode(network);
     return result;
   }
 
@@ -71,7 +71,7 @@ export class HealthService {
    */
   public async nodeDroppedStatus(network: string): Promise<any> {
     const blockchain = this.getBlockchainInstance(cere);
-    const result = await blockchain.nodeDroppedStatus(network);
+    const result = await blockchain.getDroppedNodeStatus(network);
     return result;
   }
 
@@ -83,10 +83,10 @@ export class HealthService {
    */
   public async checkMinBalance(blockchain: string, network: string): Promise<any> {
     this.logger.debug(`About to check account minimum balance`);
-    const blockchainNetwork: IBlockchain = this.getBlockchainInstance(blockchain);
-    blockchainNetwork.hasNetwork(network);
-    const wallets = blockchainNetwork.getWallets(network);
-    const {status, result} = await this.validateBalance(network, wallets, blockchainNetwork);
+    const currentBlockchain: IBlockchain = this.getBlockchainInstance(blockchain);
+    currentBlockchain.hasNetwork(network);
+    const wallets = currentBlockchain.getWallets(network);
+    const {status, result} = await this.validateBalance(network, wallets, currentBlockchain);
     return {status, result};
   }
 
@@ -99,10 +99,10 @@ export class HealthService {
    */
   public async checkMinBalanceOfWallet(blockchain: string, network: string, wallet: string): Promise<any> {
     this.logger.debug(`About to check account minimum balance`);
-    const blockchainNetwork: IBlockchain = this.getBlockchainInstance(blockchain);
-    blockchainNetwork.hasNetwork(network);
-    const account = blockchainNetwork.getWallet(network, wallet);
-    const {status, result} = await this.validateBalance(network, [account], blockchainNetwork);
+    const currentBlockchain: IBlockchain = this.getBlockchainInstance(blockchain);
+    currentBlockchain.hasNetwork(network);
+    const account = currentBlockchain.getWallet(network, wallet);
+    const {status, result} = await this.validateBalance(network, [account], currentBlockchain);
     return {status, result};
   }
 
@@ -139,9 +139,9 @@ export class HealthService {
    * @returns Blockchain Instance
    */
   private getBlockchainInstance(blockchain: string) {
-    if (!this.blockchain.has(blockchain)) {
+    if (!this.blockchains.has(blockchain)) {
       throw new Error('Invalid blockchain type');
     }
-    return this.blockchain.get(blockchain);
+    return this.blockchains.get(blockchain);
   }
 }
