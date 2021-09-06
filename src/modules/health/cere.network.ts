@@ -10,7 +10,7 @@ import {validatorStatus} from './validatorStatus.enum';
 import {Cron} from '@nestjs/schedule';
 import {BlockStatusDto} from './dto/block-status.dto';
 
-export const cere = 'CERE';
+export const CERE_NETWORK = 'CERE';
 
 export class CereNetwork implements IBlockchain {
   private logger = new Logger(CereNetwork.name);
@@ -32,7 +32,7 @@ export class CereNetwork implements IBlockchain {
   private init(): void {
     const healthAccounts = JSON.parse(this.configService.get('HEALTH_ACCOUNTS'));
     healthAccounts.forEach((element) => {
-      if (element.blockchain === cere) {
+      if (element.blockchain === CERE_NETWORK) {
         element.data.forEach(async (data) => {
           this.accounts.set(data.network, {account: data.accounts});
           const provider = new WsProvider(data.rpc);
@@ -162,7 +162,7 @@ export class CereNetwork implements IBlockchain {
     return false;
   }
 
-  public async getBlockProduction(network: string): Promise<boolean> {
+  public async checkBlockProductionTime(network: string): Promise<boolean> {
     this.logger.log(`About to fetch block production time`);
     this.hasNetwork(network);
     const {api} = this.getNetwork(network);

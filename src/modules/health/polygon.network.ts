@@ -3,7 +3,7 @@ import {IBlockchain, Wallet} from './blockchain.interface';
 import Web3 from 'web3';
 import {ConfigService} from '../config/config.service';
 
-export const polygon = 'POLYGON';
+export const POLYGON_NETWORK = 'POLYGON';
 
 @Injectable()
 export class PolygonNetwork implements IBlockchain {
@@ -20,7 +20,7 @@ export class PolygonNetwork implements IBlockchain {
   private init(): void {
     const healthAccounts = JSON.parse(this.configService.get('HEALTH_ACCOUNTS'));
     healthAccounts.forEach((element) => {
-      if (element.blockchain === polygon) {
+      if (element.blockchain === POLYGON_NETWORK) {
         element.data.forEach((data) => {
           this.accounts.set(data.network, {account: data.accounts});
           this.network.set(data.network, {api: new Web3(new Web3.providers.HttpProvider(data.rpc))});

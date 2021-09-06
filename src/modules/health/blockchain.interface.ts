@@ -15,8 +15,7 @@ export interface IBlockchain {
   checkHealth?(network: string): Promise<any>;
   getBlockStatus?(network: string): Promise<BlockStatusDto>;
   getNodeFinalizationStatus?(network: string): Promise<boolean>;
-  getBlockProduction?(network: string): Promise<boolean>;
-  getSlashedValidator?(): Promise<void>;
+  checkBlockProductionTime?(network: string): Promise<boolean>;
   getDroppedNode?(network: string): Promise<any>;
   getDroppedNodeStatus?(network: string): Promise<any>;
 }

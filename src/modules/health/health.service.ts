@@ -1,5 +1,5 @@
-import {polygon, PolygonNetwork} from './polygon.network';
-import {cere, CereNetwork} from './cere.network';
+import {POLYGON_NETWORK, PolygonNetwork} from './polygon.network';
+import {CERE_NETWORK, CereNetwork} from './cere.network';
 import {IBlockchain, Wallet} from './blockchain.interface';
 import {Injectable, Logger} from '@nestjs/common';
 import {BlockStatusDto} from './dto/block-status.dto';
@@ -11,8 +11,8 @@ export class HealthService {
   private blockchains: Map<string, IBlockchain> = new Map<string, IBlockchain>();
 
   public constructor(private readonly cereNetwork: CereNetwork, private readonly polygonNetwork: PolygonNetwork) {
-    this.blockchains.set(cere, this.cereNetwork);
-    this.blockchains.set(polygon, this.polygonNetwork);
+    this.blockchains.set(CERE_NETWORK, this.cereNetwork);
+    this.blockchains.set(POLYGON_NETWORK, this.polygonNetwork);
   }
 
   /**
@@ -22,7 +22,7 @@ export class HealthService {
    */
   public async healthCheck(network: string): Promise<any> {
     this.logger.debug(`About to fetch system health`);
-    const currentBlockchain = this.getBlockchainInstance(cere);
+    const currentBlockchain = this.getBlockchainInstance(CERE_NETWORK);
     const result = await currentBlockchain.checkHealth(network);
     return result;
   }
@@ -34,22 +34,22 @@ export class HealthService {
    */
   public async blockStatus(network: string): Promise<BlockStatusDto> {
     this.logger.debug(`About to fetch block status`);
-    const currentBlockchain = this.getBlockchainInstance(cere);
+    const currentBlockchain = this.getBlockchainInstance(CERE_NETWORK);
     const result = await currentBlockchain.getBlockStatus(network);
     return result;
   }
 
   public async finalization(network: string): Promise<boolean> {
     this.logger.debug(`About to fetch block status`);
-    const currentBlockchain = this.getBlockchainInstance(cere);
+    const currentBlockchain = this.getBlockchainInstance(CERE_NETWORK);
     const result = await currentBlockchain.getNodeFinalizationStatus(network);
     return result;
   }
 
   public async blockProduction(network: string): Promise<boolean> {
     this.logger.log(`About to fetch block production time`);
-    const currentBlockchain = this.getBlockchainInstance(cere);
-    const result = await currentBlockchain.getBlockProduction(network);
+    const currentBlockchain = this.getBlockchainInstance(CERE_NETWORK);
+    const result = await currentBlockchain.checkBlockProductionTime(network);
     return result;
   }
 
@@ -59,7 +59,7 @@ export class HealthService {
    * @returns notified status
    */
   public async nodeDropped(network: string): Promise<any> {
-    const currentBlockchain = this.getBlockchainInstance(cere);
+    const currentBlockchain = this.getBlockchainInstance(CERE_NETWORK);
     const result = await currentBlockchain.getDroppedNode(network);
     return result;
   }
@@ -70,7 +70,7 @@ export class HealthService {
    * @returns slashed validator
    */
   public async nodeDroppedStatus(network: string): Promise<any> {
-    const currentBlockchain = this.getBlockchainInstance(cere);
+    const currentBlockchain = this.getBlockchainInstance(CERE_NETWORK);
     const result = await currentBlockchain.getDroppedNodeStatus(network);
     return result;
   }
