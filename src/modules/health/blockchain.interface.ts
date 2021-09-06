@@ -1,17 +1,10 @@
-import Web3 from 'web3';
-import {ApiPromise} from '@polkadot/api';
 import {BlockStatusDto} from './dto/block-status.dto';
-
-export const BLOCKCHAIN_INTERFACE = 'BLOCKCHAIN_INTERFACE';
 
 export type Wallet = {
   address: string;
   name: string;
   minBalance: number;
 };
-
-export type network = Map<string, {api: Web3 | ApiPromise}>;
-export type account = Map<string, {account: [Wallet]}>;
 
 export interface IBlockchain {
   getBalance(wallet: string, network: string): Promise<number>;
