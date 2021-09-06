@@ -6,6 +6,7 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 
 ## Release notes
 ### vNext
+* Added support to monitor polygon account balance.
 
 ### v1.14.0
 * QA config removed
