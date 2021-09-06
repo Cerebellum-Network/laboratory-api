@@ -112,7 +112,6 @@ export class HealthController {
         // eslint-disable-next-line no-param-reassign
         blockchain = 'CERE';
       }
-      console.log(blockchain);
       const {status, result} = await this.healthService.checkMinBalance(blockchain, network);
       if (status) {
         res.status(HttpStatus.NO_CONTENT).send();
@@ -136,7 +135,6 @@ export class HealthController {
         // eslint-disable-next-line no-param-reassign
         blockchain = 'CERE';
       }
-      console.log(blockchain);
       const {status, result} = await this.healthService.checkMinBalanceOfWallet(blockchain, network, wallet);
       if (status) {
         res.status(HttpStatus.NO_CONTENT).send();
