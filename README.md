@@ -6,19 +6,19 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 
 ## Release notes
 ### vNext
-* Added support to monitor polygon account balance.
+* Added health api for tracking accounts balance in Polygon
 
 ### v1.14.0
 * QA config removed
 
 ### v1.13.0
-* Added order by(descending) for transaction history.
+* Added order by(descending) for transaction history
 
 ### v1.12.0
 * Added migrations framework
 * Added migration to clean up Devnet scanned data
-* Add api to find duplicate entries in transaction table
-* Adding health api for tracking accounts balance
+* Added api to find duplicate entries in transaction table
+* Added health api for tracking accounts balance
 
 ### v1.11.0
 * Fixed duplicate issue with transaction
