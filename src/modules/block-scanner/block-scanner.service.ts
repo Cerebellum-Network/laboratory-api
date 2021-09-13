@@ -79,7 +79,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public startScanning() {
     this.logger.log(`About to start scanning network`);
-    console.log('startScanning');
     for (const [key, value] of this.networkMap) {
       this.processOldBlock(value.api, key);
     }
