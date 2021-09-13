@@ -451,7 +451,10 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       extrinsic.forEach(async (txn, index) => {
         if (transferMethods.includes(txn.method)) {
           if (txn.method === MethodName.chainBridgeAckProposal) {
-            const extractedData : {sender: string, args: string} = await this.extractSenderAndArgsFromChainbridge(txn.events);
+            const extractedData: { sender: string, args: string } = await this.extractSenderAndArgsFromChainbridge(txn.events);
+            if (extractedData === undefined) {
+              return;
+            }
             argument = extractedData.args;
             sender = extractedData.sender.toString();
           } else if (txn.method === MethodName.balanceTransfer || MethodName.balanceTransferKeepAlive) {
@@ -507,7 +510,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
           resolve({sender, args});
         }
       });
-      throw new Error("No Balance.Transfer Event");
     });
   }
 
