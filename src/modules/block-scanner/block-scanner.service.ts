@@ -1,3 +1,4 @@
+import {MethodName} from "../shared/constant/methodName";
 import {Injectable, Logger} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {ApiPromise, WsProvider} from '@polkadot/api';
@@ -434,26 +435,26 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       let argument;
       let sender;
       const transferMethods = [
-        'balances.transfer',
-        'balances.transferKeepAlive',
-        'contracts.instantiate',
-        'contracts.putCode',
-        'contracts.call',
-        'utility.batch',
-        'cereDdcModule.sendData',
-        'session.setKeys',
-        'staking.bond',
-        'staking.validate',
-        'staking.nominate',
-        'chainBridge.acknowledgeProposal',
+        MethodName.balanceTransfer,
+        MethodName.balanceTransferKeepAlive,
+        MethodName.contractsInstantiate,
+        MethodName.contractsPutcode,
+        MethodName.contractsCall,
+        MethodName.utilityBatch,
+        MethodName.cereDDCModuleSendData,
+        MethodName.sessionSetKeys,
+        MethodName.stakingBond,
+        MethodName.stakingValidate,
+        MethodName.stakingNominate,
+        MethodName.chainBridgeAckProposal,
       ];
       extrinsic.forEach(async (txn, index) => {
         if (transferMethods.includes(txn.method)) {
-          if (txn.method === 'chainBridge.acknowledgeProposal') {
-            const tmpData : {sender: string, args: string} = await this.processChainbridge(txn.events);
-            argument = tmpData.args;
-            sender = tmpData.sender.toString();
-          } else if (txn.method === 'balances.transfer' || 'balances.transferKeepAlive') {
+          if (txn.method === MethodName.chainBridgeAckProposal) {
+            const extractedData : {sender: string, args: string} = await this.extractSenderAndArgsFromChainbridge(txn.events);
+            argument = extractedData.args;
+            sender = extractedData.sender.toString();
+          } else if (txn.method === MethodName.balanceTransfer || MethodName.balanceTransferKeepAlive) {
             const {dest, value} = txn.args;
             argument = `${dest}, ${value}`;
             sender = txn.signature?.signer.toString();
@@ -497,15 +498,16 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     }
   }
 
-  private processChainbridge(events: any): Promise<{ sender: string, args: string }> {
+  private extractSenderAndArgsFromChainbridge(events: any): Promise<{ sender: string, args: string }> {
     return new Promise((resolve, reject) => {
       events.forEach((value) => {
-        if (value.method === 'balances.Transfer') {
+        if (value.method === MethodName.balanceTransferEvent) {
           const sender = value.data[0];
           const args = `${value.data[1]}, ${value.data[2]}`;
           resolve({sender, args});
         }
       });
+      throw new Error("No Balance.Transfer Event");
     });
   }
 
