@@ -47,9 +47,9 @@ export interface ISanitizedArgs {
 export interface NetworkProp {
   api: ApiPromise;
   blockNumber: number;
-  stopRequested: boolean,
-  stopPromise: any
-};
+  stopRequested: boolean;
+  stopPromise: any;
+}
 
 @Injectable()
 export class BlockScannerService implements BlockScannerServiceInterface {
@@ -106,8 +106,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   // Process the blocks from where it has been leftout to current block
   public async processOldBlock(api: ApiPromise, network: string): Promise<void> {
     try {
-      // const blockNumber = await this.fetchBlockNumber(network);
-      const blockNumber = 1432683;
+      const blockNumber = await this.fetchBlockNumber(network);
       let latestBlock = await api.rpc.chain.getHeader();
 
       for (let i: number = blockNumber + 1; i <= Number(latestBlock.number); i += 1) {
@@ -433,6 +432,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   private processExtrinsics(extrinsic: any, block: any, network: string): any {
     try {
       const events = [];
+      let argument;
+      let sender;
       const transferMethods = [
         'balances.transfer',
         'balances.transferKeepAlive',
@@ -447,12 +448,19 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         'staking.nominate',
         'chainBridge.acknowledgeProposal',
       ];
-      console.log(`Extrinsic ${JSON.stringify(extrinsic)}`);
       extrinsic.forEach(async (txn, index) => {
         if (transferMethods.includes(txn.method)) {
           if (txn.method === 'chainBridge.acknowledgeProposal') {
-            const data = await this.processChainbridge(txn.events);
-            console.log(`data ${data}`);
+            const tmpData : {sender: string, args: string} = await this.processChainbridge(txn.events);
+            argument = tmpData.args;
+            sender = tmpData.sender.toString();
+          } else if (txn.method === 'balances.transfer' || 'balances.transferKeepAlive') {
+            const {dest, value} = txn.args;
+            argument = `${dest}, ${value}`;
+            sender = txn.signature?.signer.toString();
+          } else {
+            argument = txn.args.toString();
+            sender = txn.signature?.signer.toString()
           }
           txn.events.forEach((value) => {
             const method = value.method.split('.');
@@ -464,14 +472,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             events.push(eventData);
           });
 
-          let arg;
-          if (txn.method === 'balances.transfer' || 'balances.transferKeepAlive') {
-            const {dest, value} = txn.args;
-            arg = `${dest}, ${value}`;
-          } else {
-            arg = txn.args.toString();
-          }
-
           const transactionEntity = {
             transactionHash: txn.hash?.toString(),
             events,
@@ -479,21 +479,15 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             transactionIndex: index,
             success: txn.success,
             signature: txn.signature?.signature.toString(),
-            senderId: txn.signature?.signer.toString(),
-            args: arg,
+            senderId: sender,
+            args: argument,
             method: txn.method,
             timestamp: block.timestamp,
             block,
             networkType: network,
           };
 
-          await this.transactionEntityRepository
-            .createQueryBuilder()
-            .insert()
-            .into('transactions')
-            .values(transactionEntity)
-            .onConflict(`("transactionHash") DO NOTHING`)
-            .execute();
+          await this.saveTransactionData(transactionEntity);
         } else {
           // this.logger.debug(`No Transaction for block: ${block.blockNumber}\n\n`);
         }
@@ -504,20 +498,26 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     }
   }
 
-  private processChainbridge(events: any) {
-    events.forEach(value => {
-      let result;
-      if (value.method === 'balances.Transfer') {
-        const sender = value.data[0];
-        // value.data.shift();
-        // const args = (value.data).toString();
-        const args = `${value.data[1]}, ${value.data[2]}`;
-        console.log(`sender ${sender}`);
-        console.log(`args: ${args}`);
-        result = {sender, args};
-      }
-      return result
-    })
+  private processChainbridge(events: any): Promise<{ sender: string, args: string }> {
+    return new Promise((resolve, reject) => {
+      events.forEach((value) => {
+        if (value.method === 'balances.Transfer') {
+          const sender = value.data[0];
+          const args = `${value.data[1]}, ${value.data[2]}`;
+          resolve({sender, args});
+        }
+      });
+    });
+  }
+
+  private async saveTransactionData(transaction) {
+    await this.transactionEntityRepository
+      .createQueryBuilder()
+      .insert()
+      .into('transactions')
+      .values(transaction)
+      .onConflict(`("transactionHash") DO NOTHING`)
+      .execute();
   }
 
   private parseGenericCall(genericCall: GenericCall, registry: Registry): ISanitizedCall {
