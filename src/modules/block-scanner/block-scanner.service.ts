@@ -1,3 +1,4 @@
+import {MethodName} from "../shared/constant/methodName";
 import {Injectable, Logger} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {ApiPromise, WsProvider} from '@polkadot/api';
@@ -47,9 +48,9 @@ export interface ISanitizedArgs {
 export interface NetworkProp {
   api: ApiPromise;
   blockNumber: number;
-  stopRequested: boolean,
-  stopPromise: any
-};
+  stopRequested: boolean;
+  stopPromise: any;
+}
 
 @Injectable()
 export class BlockScannerService implements BlockScannerServiceInterface {
@@ -431,21 +432,39 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   private processExtrinsics(extrinsic: any, block: any, network: string): any {
     try {
       const events = [];
+      let args;
+      let sender;
       const transferMethods = [
-        'balances.transfer',
-        'balances.transferKeepAlive',
-        'contracts.instantiate',
-        'contracts.putCode',
-        'contracts.call',
-        'utility.batch',
-        'cereDdcModule.sendData',
-        'session.setKeys',
-        'staking.bond',
-        'staking.validate',
-        'staking.nominate',
+        MethodName.balanceTransfer,
+        MethodName.balanceTransferKeepAlive,
+        MethodName.contractsInstantiate,
+        MethodName.contractsPutcode,
+        MethodName.contractsCall,
+        MethodName.utilityBatch,
+        MethodName.cereDDCModuleSendData,
+        MethodName.sessionSetKeys,
+        MethodName.stakingBond,
+        MethodName.stakingValidate,
+        MethodName.stakingNominate,
+        MethodName.chainBridgeAckProposal,
       ];
       extrinsic.forEach(async (txn, index) => {
         if (transferMethods.includes(txn.method)) {
+          if (txn.method === MethodName.chainBridgeAckProposal) {
+            const extractedData: { sender: string, args: string } = this.extractSenderAndArgsFromChainbridge(txn.events);
+            if (extractedData === null) {
+              return;
+            }
+            args = extractedData.args;
+            sender = extractedData.sender.toString();
+          } else if (txn.method === MethodName.balanceTransfer || MethodName.balanceTransferKeepAlive) {
+            const {dest, value} = txn.args;
+            args = `${dest}, ${value}`;
+            sender = txn.signature?.signer.toString();
+          } else {
+            args = txn.args.toString();
+            sender = txn.signature?.signer.toString()
+          }
           txn.events.forEach((value) => {
             const method = value.method.split('.');
             const eventData = {
@@ -456,14 +475,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             events.push(eventData);
           });
 
-          let arg;
-          if (txn.method === 'balances.transfer' || 'balances.transferKeepAlive') {
-            const {dest, value} = txn.args;
-            arg = `${dest}, ${value}`;
-          } else {
-            arg = txn.args.toString();
-          }
-
           const transactionEntity = {
             transactionHash: txn.hash?.toString(),
             events,
@@ -471,21 +482,15 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             transactionIndex: index,
             success: txn.success,
             signature: txn.signature?.signature.toString(),
-            senderId: txn.signature?.signer.toString(),
-            args: arg,
+            senderId: sender,
+            args,
             method: txn.method,
             timestamp: block.timestamp,
             block,
             networkType: network,
           };
 
-          await this.transactionEntityRepository
-            .createQueryBuilder()
-            .insert()
-            .into('transactions')
-            .values(transactionEntity)
-            .onConflict(`("transactionHash") DO NOTHING`)
-            .execute();
+          await this.saveTransactionData(transactionEntity);
         } else {
           // this.logger.debug(`No Transaction for block: ${block.blockNumber}\n\n`);
         }
@@ -494,6 +499,28 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       this.logger.error(error.toString());
       this.init();
     }
+  }
+
+  private extractSenderAndArgsFromChainbridge(events: any): { sender: string, args: string } {
+    for (const value of events) {
+      if (value.method === MethodName.balanceTransferEvent) {
+        const sender = value.data[0];
+        const args = `${value.data[1]}, ${value.data[2]}`;
+        this.logger.debug(sender);
+        return {sender, args};
+      }
+    }
+    return null;
+  }
+
+  private async saveTransactionData(transaction) {
+    await this.transactionEntityRepository
+      .createQueryBuilder()
+      .insert()
+      .into('transactions')
+      .values(transaction)
+      .onConflict(`("transactionHash") DO NOTHING`)
+      .execute();
   }
 
   private parseGenericCall(genericCall: GenericCall, registry: Registry): ISanitizedCall {
