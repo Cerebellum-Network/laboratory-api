@@ -451,7 +451,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       extrinsic.forEach(async (txn, index) => {
         if (transferMethods.includes(txn.method)) {
           if (txn.method === MethodName.chainBridgeAckProposal) {
-            const extractedData: { sender: string, args: string } = await this.extractSenderAndArgsFromChainbridge(txn.events);
+            const extractedData: { sender: string, args: string } = this.extractSenderAndArgsFromChainbridge(txn.events);
             if (extractedData === undefined) {
               return;
             }
@@ -501,16 +501,16 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     }
   }
 
-  private extractSenderAndArgsFromChainbridge(events: any): Promise<{ sender: string, args: string }> {
-    return new Promise((resolve, reject) => {
-      events.forEach((value) => {
-        if (value.method === MethodName.balanceTransferEvent) {
-          const sender = value.data[0];
-          const args = `${value.data[1]}, ${value.data[2]}`;
-          resolve({sender, args});
-        }
-      });
-    });
+  private extractSenderAndArgsFromChainbridge(events: any): { sender: string, args: string } {
+    for (const value of events) {
+      if (value.method === MethodName.balanceTransferEvent) {
+        const sender = value.data[0];
+        const args = `${value.data[1]}, ${value.data[2]}`;
+        this.logger.debug(sender);
+        return {sender, args};
+      }
+    }
+    return null;
   }
 
   private async saveTransactionData(transaction) {
