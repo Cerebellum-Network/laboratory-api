@@ -432,7 +432,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   private processExtrinsics(extrinsic: any, block: any, network: string): any {
     try {
       const events = [];
-      let argument;
+      let args;
       let sender;
       const transferMethods = [
         MethodName.balanceTransfer,
@@ -452,17 +452,17 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         if (transferMethods.includes(txn.method)) {
           if (txn.method === MethodName.chainBridgeAckProposal) {
             const extractedData: { sender: string, args: string } = this.extractSenderAndArgsFromChainbridge(txn.events);
-            if (extractedData === undefined) {
+            if (extractedData === null) {
               return;
             }
-            argument = extractedData.args;
+            args = extractedData.args;
             sender = extractedData.sender.toString();
           } else if (txn.method === MethodName.balanceTransfer || MethodName.balanceTransferKeepAlive) {
             const {dest, value} = txn.args;
-            argument = `${dest}, ${value}`;
+            args = `${dest}, ${value}`;
             sender = txn.signature?.signer.toString();
           } else {
-            argument = txn.args.toString();
+            args = txn.args.toString();
             sender = txn.signature?.signer.toString()
           }
           txn.events.forEach((value) => {
@@ -483,7 +483,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
             success: txn.success,
             signature: txn.signature?.signature.toString(),
             senderId: sender,
-            args: argument,
+            args,
             method: txn.method,
             timestamp: block.timestamp,
             block,
