@@ -7,6 +7,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ## Release notes
 ### vNext
 
+### v1.16.0
+* Added chainBridge.acknowledgeProposal with tokens transfer extrinsic support
+
 ### v1.15.0
 * Added health api for tracking accounts balance in Polygon
 
