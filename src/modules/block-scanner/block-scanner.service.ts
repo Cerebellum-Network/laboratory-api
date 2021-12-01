@@ -20,7 +20,6 @@ import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
 import config from '../shared/constant/config';
 import Deferred from 'promise-deferred';
-import process from 'process';
 
 export interface ISanitizedEvent {
   method: string;
@@ -69,7 +68,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     private readonly configService: ConfigService,
   ) {}
 
-  public async init(): Promise<any> {
+  public async init(): Promise<void> {
     this.logger.debug('About to scan the network');
     try {
       const networks = JSON.parse(this.configService.get('NETWORKS'));
@@ -81,14 +80,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     }
   }
 
-  public startScanning() {
-    this.logger.log(`About to start scanning network`);
-    for (const [key, value] of this.networkMap) {
-      this.processOldBlock(value.api, key);
-    }
-  }
-
-  public async initNetwork(networks: any) {
+  public async initNetwork(networks: any): Promise<void> {
     this.logger.debug('Init Network');
     for (const network of networks) {
       const provider = new WsProvider(network.URL);
@@ -106,13 +98,47 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     }
   }
 
-  // Process the blocks from where it has been leftout to current block
-  public async processOldBlock(api: ApiPromise, network: string): Promise<void> {
+  public startScanning(): void {
     try {
-      const blockNumber = await this.fetchBlockNumber(network);
-      let latestBlock = await api.rpc.chain.getHeader();
+      this.logger.log(`About to start scanning network`);
+      for (const [key, value] of this.networkMap) {
+        const {api} = value;
+        this.processNetwork(api, key);
+      }
+    } catch (error) {
+      this.logger.error(error);
+      this.startScanning();
+    }
+  }
 
-      for (let i: number = blockNumber + 1; i <= Number(latestBlock.number); i += 1) {
+  public async processNetwork(api: ApiPromise, network: string): Promise<void> {
+    try {
+      let blockNumber = await this.fetchBlockNumber(network);
+      console.log(blockNumber);
+      
+      let latestBlock = await api.rpc.chain.getHeader();
+      while (blockNumber !== Number(latestBlock.number)) {
+        await this.processOldBlock(blockNumber, latestBlock.number, api, network);
+        blockNumber = await this.fetchBlockNumber(network);
+        latestBlock = await api.rpc.chain.getHeader();
+      }
+      this.processBlock(api, network);
+    } catch (err) {
+      this.logger.error(err.message);
+      await this.sleep(this.retryTimeMilliSeconds)
+      this.processNetwork(api, network);
+    }
+  }
+
+  // Process the blocks from where it has been left out to current block
+  public async processOldBlock(
+    startBlockNumber: number,
+    latestBlockNumber: any,
+    api: ApiPromise,
+    network: string,
+  ): Promise<void> {
+    try {
+      for (let i: number = startBlockNumber + 1; i <= Number(latestBlockNumber); i += 1) {
         const {stopRequested} = this.networkMap.get(network);
 
         if (stopRequested) {
@@ -120,37 +146,27 @@ export class BlockScannerService implements BlockScannerServiceInterface {
           stopPromise.resolve();
           return;
         }
-        await this.scanChain(i, api, network);
-        latestBlock = await api.rpc.chain.getHeader();
+        await this.scanBlock(i, api, network);
       }
-      this.processBlock(api, network);
     } catch (error) {
-      this.logger.error(error.toString());
-      this.init();
+      throw new Error(error);
     }
   }
 
   // Process the current blocks.
   public async processBlock(api: ApiPromise, network: string): Promise<void> {
+    let unsubscribe;
     try {
-      const blockNumber = await this.fetchBlockNumber(network);
-
-      const latestBlock = await api.rpc.chain.getHeader();
-
-      if (blockNumber !== Number(latestBlock.number)) {
-        await this.processOldBlock(api, network);
-      } else {
-        api.derive.chain.subscribeNewHeads(async (header) => {
-          await this.scanChain(Number(header.number), api, network);
-        });
-      }
+      unsubscribe = await api.derive.chain.subscribeNewHeads(async (header) => {
+        await this.scanBlock(Number(header.number), api, network);
+      });
     } catch (error) {
-      this.logger.error(error.toString());
-      this.startScanning()
+      unsubscribe();
+      throw new Error(error);
     }
   }
 
-  public async scanChain(blockNumber: number, api: ApiPromise, network: string): Promise<any> {
+  public async scanBlock(blockNumber: number, api: ApiPromise, network: string): Promise<any> {
     try {
       this.logger.debug(`scan chain: ${network} - ${blockNumber}`);
       const networkProp = this.networkMap.get(network);
@@ -170,17 +186,11 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         timestamp: new Date(momentPrev.toNumber()),
         extrinsicRoot: blockData.extrinsicsRoot.toString(),
       };
-
       await getConnection().createQueryBuilder().insert().into('blocks').values(blockEntity).execute();
 
       await this.processExtrinsics(blockData.extrinsics, blockEntity, network);
     } catch (error) {
-      for (const [key, value] of Object.entries(process.memoryUsage())) {
-        this.logger.debug(`Memory usage by ${key}, ${value / 1000000}MB `);
-      }
-      await this.sleep(this.retryTimeMilliSeconds);
-      this.logger.error(error.toString());
-      this.startScanning();
+      throw new Error(error);
     }
   }
 
@@ -277,8 +287,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     this.networkMap.get(network).blockNumber = undefined;
     this.networkMap.get(network).stopRequested = false;
     const {api} = this.networkMap.get(network);
-
-    this.processOldBlock(api, network);
+    this.processNetwork(api, network);
 
     return true;
   }
