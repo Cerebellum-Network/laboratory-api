@@ -58,7 +58,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public networkMap: Map<string, NetworkProp> = new Map<string, NetworkProp>();
 
-  private retryTimeMilliSeconds = 10000;
+  private delayTimeMilliSeconds = this.configService.get('delayTimeMS');
 
   public constructor(
     @InjectRepository(BlockEntity)
@@ -106,7 +106,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         this.processNetwork(api, key);
       }
     } catch (error) {
-      this.logger.error(error);
+      this.logger.error(`Error in start scanning ${error}`);
       this.startScanning();
     }
   }
@@ -114,24 +114,22 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public async processNetwork(api: ApiPromise, network: string): Promise<void> {
     try {
       let blockNumber = await this.fetchBlockNumber(network);
-      console.log(blockNumber);
-      
       let latestBlock = await api.rpc.chain.getHeader();
       while (blockNumber !== Number(latestBlock.number)) {
-        await this.processOldBlock(blockNumber, latestBlock.number, api, network);
+        await this.processOldBlocks(blockNumber, latestBlock.number, api, network);
         blockNumber = await this.fetchBlockNumber(network);
         latestBlock = await api.rpc.chain.getHeader();
       }
-      this.processBlock(api, network);
+      this.processBlocks(api, network);
     } catch (err) {
-      this.logger.error(err.message);
-      await this.sleep(this.retryTimeMilliSeconds)
+      this.logger.error(`Error in process network ${err.message}`);
+      await this.sleep(this.delayTimeMilliSeconds);
       this.processNetwork(api, network);
     }
   }
 
   // Process the blocks from where it has been left out to current block
-  public async processOldBlock(
+  public async processOldBlocks(
     startBlockNumber: number,
     latestBlockNumber: any,
     api: ApiPromise,
@@ -149,12 +147,13 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         await this.scanBlock(i, api, network);
       }
     } catch (error) {
+      this.logger.error(`Error in process old block ${error}`)
       throw new Error(error);
     }
   }
 
   // Process the current blocks.
-  public async processBlock(api: ApiPromise, network: string): Promise<void> {
+  public async processBlocks(api: ApiPromise, network: string): Promise<void> {
     let unsubscribe;
     try {
       unsubscribe = await api.derive.chain.subscribeNewHeads(async (header) => {
@@ -162,6 +161,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       });
     } catch (error) {
       unsubscribe();
+      this.logger.error(`Error in process blocks ${error}`)
       throw new Error(error);
     }
   }
@@ -190,6 +190,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
       await this.processExtrinsics(blockData.extrinsics, blockEntity, network);
     } catch (error) {
+      this.logger.error(`Error in scan block ${error}`)
       throw new Error(error);
     }
   }
