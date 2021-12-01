@@ -20,6 +20,7 @@ import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
 import config from '../shared/constant/config';
 import Deferred from 'promise-deferred';
+import process from 'process';
 
 export interface ISanitizedEvent {
   method: string;
@@ -57,6 +58,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   public logger = new Logger(BlockScannerService.name);
 
   public networkMap: Map<string, NetworkProp> = new Map<string, NetworkProp>();
+
+  private retryTimeMilliSeconds = 20000;
 
   public constructor(
     @InjectRepository(BlockEntity)
@@ -172,6 +175,10 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
       await this.processExtrinsics(blockData.extrinsics, blockEntity, network);
     } catch (error) {
+      for (const [key, value] of Object.entries(process.memoryUsage())) {
+        this.logger.debug(`Memory usage by ${key}, ${value / 1000000}MB `);
+      }
+      await this.sleep(this.retryTimeMilliSeconds);
       this.logger.error(error.toString());
       this.init();
     }
@@ -569,5 +576,9 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
       return argument;
     });
+  }
+
+  private sleep(ms) {
+    return new Promise((resolve) => setTimeout(resolve, ms));
   }
 }
