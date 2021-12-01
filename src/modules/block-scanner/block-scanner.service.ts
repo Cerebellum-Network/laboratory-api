@@ -146,7 +146,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       }
     } catch (error) {
       this.logger.error(error.toString());
-      this.init();
+      this.startScanning()
     }
   }
 
@@ -180,7 +180,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       }
       await this.sleep(this.retryTimeMilliSeconds);
       this.logger.error(error.toString());
-      this.init();
+      this.startScanning();
     }
   }
 
