@@ -59,7 +59,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public networkMap: Map<string, NetworkProp> = new Map<string, NetworkProp>();
 
-  private retryTimeMilliSeconds = 20000;
+  private retryTimeMilliSeconds = 10000;
 
   public constructor(
     @InjectRepository(BlockEntity)
