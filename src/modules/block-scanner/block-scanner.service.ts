@@ -58,7 +58,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public networkMap: Map<string, NetworkProp> = new Map<string, NetworkProp>();
 
-  private delayTimeMilliSeconds = this.configService.get('delayTimeMS');
+  private delayTimeMilliseconds = this.configService.get('delayTimeMS');
 
   public constructor(
     @InjectRepository(BlockEntity)
@@ -121,9 +121,9 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         latestBlock = await api.rpc.chain.getHeader();
       }
       this.processBlocks(api, network);
-    } catch (err) {
-      this.logger.error(`Error in process network ${err.message}`);
-      await this.sleep(this.delayTimeMilliSeconds);
+    } catch (error) {
+      this.logger.error(`Error in process network ${error}`);
+      await this.sleep(this.delayTimeMilliseconds);
       this.processNetwork(api, network);
     }
   }
@@ -147,8 +147,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
         await this.scanBlock(i, api, network);
       }
     } catch (error) {
-      this.logger.error(`Error in process old block ${error}`)
-      throw new Error(error);
+      this.logger.error(`Error in process old block ${error}`);
+      throw error;
     }
   }
 
@@ -161,8 +161,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       });
     } catch (error) {
       unsubscribe();
-      this.logger.error(`Error in process blocks ${error}`)
-      throw new Error(error);
+      this.logger.error(`Error in process blocks ${error}`);
+      throw error;
     }
   }
 
@@ -190,8 +190,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
       await this.processExtrinsics(blockData.extrinsics, blockEntity, network);
     } catch (error) {
-      this.logger.error(`Error in scan block ${error}`)
-      throw new Error(error);
+      this.logger.error(`Error in scan block ${error}`);
+      throw error;
     }
   }
 
