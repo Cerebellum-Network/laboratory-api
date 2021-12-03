@@ -58,7 +58,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public networkMap: Map<string, NetworkProp> = new Map<string, NetworkProp>();
 
-  private delayTimeMilliseconds = this.configService.get('delayTimeMS');
+  private delayTimeMilliseconds = this.configService.get('DELAY_TIME_MS');
 
   public constructor(
     @InjectRepository(BlockEntity)
