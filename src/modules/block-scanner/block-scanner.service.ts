@@ -99,44 +99,41 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   }
 
   public startScanning(): void {
-    try {
       this.logger.log(`About to start scanning network`);
       for (const [key, value] of this.networkMap) {
         const {api} = value;
         this.processNetwork(api, key);
       }
-    } catch (error) {
-      this.logger.error(`Error in start scanning ${error}`);
-      this.startScanning();
-    }
   }
 
   public async processNetwork(api: ApiPromise, network: string): Promise<void> {
-    try {
-      let blockNumber = await this.fetchBlockNumber(network);
-      let latestBlock = await api.rpc.chain.getHeader();
-      while (blockNumber !== Number(latestBlock.number)) {
-        await this.processOldBlocks(blockNumber, latestBlock.number, api, network);
-        blockNumber = await this.fetchBlockNumber(network);
-        latestBlock = await api.rpc.chain.getHeader();
+      this.logger.log(`Process Network`);
+      while(true){
+        try {
+          let blockNumber = await this.fetchBlockNumber(network);
+          let latestBlock = await api.rpc.chain.getHeader();
+          while (blockNumber !== Number(latestBlock.number)) {
+            await this.processOldBlocks(blockNumber, Number(latestBlock.number), api, network);
+            blockNumber = await this.fetchBlockNumber(network);
+            latestBlock = await api.rpc.chain.getHeader();
+          }
+          await this.processBlocks(api, network);
+        } catch (error) {
+          this.logger.error(`Error in process network ${error}`);
+          await this.sleep(this.delayTimeMilliseconds);
+        }
       }
-      this.processBlocks(api, network);
-    } catch (error) {
-      this.logger.error(`Error in process network ${error}`);
-      await this.sleep(this.delayTimeMilliseconds);
-      this.processNetwork(api, network);
-    }
   }
 
   // Process the blocks from where it has been left out to current block
   public async processOldBlocks(
     startBlockNumber: number,
-    latestBlockNumber: any,
+    latestBlockNumber: number,
     api: ApiPromise,
     network: string,
   ): Promise<void> {
     try {
-      for (let i: number = startBlockNumber + 1; i <= Number(latestBlockNumber); i += 1) {
+      for (let i: number = startBlockNumber + 1; i <= latestBlockNumber; i += 1) {
         const {stopRequested} = this.networkMap.get(network);
 
         if (stopRequested) {
