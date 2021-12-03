@@ -5,7 +5,11 @@
 This application is supposed to be used as API for [Laboratory UI](https://github.com/Cerebellum-Network/laboratory-ui).
 
 ## Release notes
+
 ### vNext
+* ...
+
+### v1.17.0
 * Fixed memory leak issue in block-scanner module
 
 ### v1.16.0
