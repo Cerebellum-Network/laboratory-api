@@ -107,7 +107,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   }
 
   public async processNetwork(api: ApiPromise, network: string): Promise<void> {
-    this.logger.log(`About to Process ${network} Network`);
+    this.logger.log(`About to process ${network} Network`);
     while (true) {
       try {
         let blockNumber = await this.fetchBlockNumber(network);
@@ -132,6 +132,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     api: ApiPromise,
     network: string,
   ): Promise<void> {
+    this.logger.log(`Process old blocks of ${network} from ${startBlockNumber} to ${latestBlockNumber}`);
     try {
       for (let i: number = startBlockNumber + 1; i <= latestBlockNumber; i += 1) {
         const {stopRequested} = this.networkMap.get(network);
@@ -187,7 +188,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
       await this.processExtrinsics(blockData.extrinsics, blockEntity, network);
     } catch (error) {
-      this.logger.error(`Error in ${network}, scan block ${error}`);
+      this.logger.error(`Error in ${network} at ${blockNumber}, scan block ${error}`);
       throw error;
     }
   }
