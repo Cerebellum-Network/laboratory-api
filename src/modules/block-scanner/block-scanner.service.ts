@@ -126,7 +126,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
   }
 
   // Process the blocks from where it has been left out to current block
-  public async processOldBlocks(
+  public processOldBlocks(
     startBlockNumber: number,
     latestBlockNumber: number,
     api: ApiPromise,
@@ -142,7 +142,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
           stopPromise.resolve();
           return;
         }
-        await this.scanBlock(i, api, network);
+        this.scanBlock(i, api, network);
       }
     } catch (error) {
       this.logger.error(`Error in ${network} process old block ${error}`);
