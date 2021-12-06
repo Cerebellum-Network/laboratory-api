@@ -166,7 +166,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public async scanBlock(blockNumber: number, api: ApiPromise, network: string): Promise<any> {
     try {
-      this.logger.debug(`scan chain: ${network} - ${blockNumber}`);
+      this.logger.log(`scan chain: ${network} - ${blockNumber}`);
       const networkProp = this.networkMap.get(network);
       networkProp.blockNumber = blockNumber;
       const blockHash: any = await api.rpc.chain.getBlockHash(blockNumber);
