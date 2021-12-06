@@ -108,11 +108,13 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public async processNetwork(api: ApiPromise, network: string): Promise<void> {
     this.logger.log(`About to process ${network} Network`);
-    while (true) {
+    let processNetworkStatus: boolean = true;
+    while (processNetworkStatus) {
       try {
+        processNetworkStatus = false;
         let blockNumber = await this.fetchBlockNumber(network);
         let latestBlock = await api.rpc.chain.getHeader();
-        while (blockNumber !== Number(latestBlock.number)) {
+        while (blockNumber < Number(latestBlock.number)) {
           await this.processOldBlocks(blockNumber, Number(latestBlock.number), api, network);
           blockNumber = await this.fetchBlockNumber(network);
           latestBlock = await api.rpc.chain.getHeader();
@@ -121,12 +123,13 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       } catch (error) {
         this.logger.error(`Error in process ${network} network ${error}`);
         await this.sleep(this.delayTimeMilliseconds);
-      }
+        processNetworkStatus = true;
+      } 
     }
   }
 
   // Process the blocks from where it has been left out to current block
-  public processOldBlocks(
+  public async processOldBlocks(
     startBlockNumber: number,
     latestBlockNumber: number,
     api: ApiPromise,
@@ -142,7 +145,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
           stopPromise.resolve();
           return;
         }
-        this.scanBlock(i, api, network);
+       await this.scanBlock(i, api, network);
       }
     } catch (error) {
       this.logger.error(`Error in ${network} process old block ${error}`);
@@ -152,9 +155,11 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   // Process the current blocks.
   public async processBlocks(api: ApiPromise, network: string): Promise<void> {
+    this.logger.log(`Process Blocks for ${network}`);
     let unsubscribe;
     try {
       unsubscribe = await api.derive.chain.subscribeNewHeads(async (header) => {
+        this.logger.debug(`Process block ${header.number.toNumber()}`);
         await this.scanBlock(Number(header.number), api, network);
       });
     } catch (error) {
