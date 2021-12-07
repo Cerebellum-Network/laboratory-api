@@ -112,7 +112,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       try {
         let blockNumber = await this.fetchBlockNumber(network);
         let latestBlock = await api.rpc.chain.getHeader();
-        while (blockNumber !== Number(latestBlock.number)) {
+        while (blockNumber < Number(latestBlock.number)) {
           await this.processOldBlocks(blockNumber, Number(latestBlock.number), api, network);
           blockNumber = await this.fetchBlockNumber(network);
           latestBlock = await api.rpc.chain.getHeader();
@@ -150,18 +150,21 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     }
   }
 
-  // Process the current blocks.
-  public async processBlocks(api: ApiPromise, network: string): Promise<void> {
-    let unsubscribe;
-    try {
-      unsubscribe = await api.derive.chain.subscribeNewHeads(async (header) => {
-        await this.scanBlock(Number(header.number), api, network);
-      });
-    } catch (error) {
-      unsubscribe();
-      this.logger.error(`Error in ${network}, process blocks ${error}`);
-      throw error;
-    }
+  public processBlocks(api: ApiPromise, network: string): Promise<void> {
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
+      this.logger.log(`Process Blocks`);
+       const unsubscribe = await api.rpc.chain.subscribeNewHeads(async (header) => {
+          try {
+            this.logger.debug(`Process block ${header.number.toNumber()}`);
+            await this.scanBlock(Number(header.number), api, network);
+          } catch (error) {
+            this.logger.error(`Error in ${network}, process blocks ${error}`);
+            unsubscribe();
+            reject(error);
+          }
+        });
+    });
   }
 
   public async scanBlock(blockNumber: number, api: ApiPromise, network: string): Promise<any> {
