@@ -108,10 +108,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
   public async processNetwork(api: ApiPromise, network: string): Promise<void> {
     this.logger.log(`About to process ${network} Network`);
-    let processNetworkStatus: boolean = true;
-    while (processNetworkStatus) {
+    while (true) {
       try {
-        processNetworkStatus = false;
         let blockNumber = await this.fetchBlockNumber(network);
         let latestBlock = await api.rpc.chain.getHeader();
         while (blockNumber < Number(latestBlock.number)) {
@@ -123,8 +121,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       } catch (error) {
         this.logger.error(`Error in process ${network} network ${error}`);
         await this.sleep(this.delayTimeMilliseconds);
-        processNetworkStatus = true;
-      } 
+      }
     }
   }
 
@@ -145,7 +142,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
           stopPromise.resolve();
           return;
         }
-       await this.scanBlock(i, api, network);
+        await this.scanBlock(i, api, network);
       }
     } catch (error) {
       this.logger.error(`Error in ${network} process old block ${error}`);
@@ -153,20 +150,21 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     }
   }
 
-  // Process the current blocks.
-  public async processBlocks(api: ApiPromise, network: string): Promise<void> {
-    this.logger.log(`Process Blocks for ${network}`);
-    let unsubscribe;
-    try {
-      unsubscribe = await api.derive.chain.subscribeNewHeads(async (header) => {
-        this.logger.debug(`Process block ${header.number.toNumber()}`);
-        await this.scanBlock(Number(header.number), api, network);
-      });
-    } catch (error) {
-      unsubscribe();
-      this.logger.error(`Error in ${network}, process blocks ${error}`);
-      throw error;
-    }
+  public processBlocks(api: ApiPromise, network: string): any {
+    // eslint-disable-next-line no-async-promise-executor
+    return new Promise(async (resolve, reject) => {
+      this.logger.log(`Process Blocks`);
+       const unsubscribe = await api.rpc.chain.subscribeNewHeads(async (header) => {
+          try {
+            this.logger.debug(`Process block ${header.number.toNumber()}`);
+            await this.scanBlock(Number(header.number), api, network);
+          } catch (error) {
+            this.logger.error(`Error in ${network}, process blocks ${error}`);
+            unsubscribe();
+            reject(error);
+          }
+        });
+    });
   }
 
   public async scanBlock(blockNumber: number, api: ApiPromise, network: string): Promise<any> {
