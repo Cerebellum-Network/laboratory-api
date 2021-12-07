@@ -31,9 +31,4 @@ export class PeerController {
   public totalIssuance(@Param('network') network: string): Promise<any> {
     return this.peerService.totalIssuance(network);
   }
-
-  @Get('/ddc-metrics')
-  public ddcMetrics(): Promise<any> {
-    return this.peerService.ddcMetric();
-  }
 }
