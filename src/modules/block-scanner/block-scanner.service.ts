@@ -150,7 +150,7 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     }
   }
 
-  public processBlocks(api: ApiPromise, network: string): any {
+  public processBlocks(api: ApiPromise, network: string): Promise<void> {
     // eslint-disable-next-line no-async-promise-executor
     return new Promise(async (resolve, reject) => {
       this.logger.log(`Process Blocks`);
