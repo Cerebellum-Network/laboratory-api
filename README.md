@@ -7,7 +7,7 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ## Release notes
 
 ### vNext
-* ...
+* Removed ddc metrics endpoint
 
 ### v1.17.0
 * Fixed memory leak issue in block-scanner module
