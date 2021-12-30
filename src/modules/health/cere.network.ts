@@ -221,8 +221,11 @@ export class CereNetwork implements IBlockchain {
    * @returns notified status
    */
   public async getDroppedNode(network: string): Promise<any> {
+    this.logger.log(`in getDroppedNode`);
     this.hasNetwork(network);
+    this.logger.log(`About to find validator`);
     const validator = await this.validatorEntityRepository.find({status: validatorStatus.NEW, network});
+    this.logger.log(`About to update status`);
     await this.validatorEntityRepository
       .createQueryBuilder()
       .update(ValidatorEntity)
@@ -230,6 +233,7 @@ export class CereNetwork implements IBlockchain {
       .where('status =:status', {status: validatorStatus.NEW})
       .andWhere('network = :network', {network})
       .execute();
+    this.logger.log(`About to return results`);
     if (validator.length === 0) {
       return true;
     }
