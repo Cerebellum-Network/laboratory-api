@@ -3,9 +3,6 @@ import {IBlockchain} from './blockchain.interface';
 import Web3 from 'web3';
 import {ConfigService} from '../config/config.service';
 import {Wallet} from "./wallet.type";
-import {AbiItem} from 'web3-utils'
-import dappTankContractAbi from "./abis/dappTankContractAbi.json";
-import {BalanceType} from "./balance-type.enum";
 
 export const POLYGON_NETWORK = 'POLYGON';
 
@@ -69,8 +66,6 @@ export class PolygonNetwork implements IBlockchain {
       return this.getBalanceNative(api, wallet.address);
     }
     switch (wallet.options.type) {
-      case BalanceType.BICONOMY:
-        return this.getBalanceBiconomy(api, wallet.options.biconomyDappGasTankProxyAddress, wallet.options.biconomyFundingKey);
       default:
         throw new Error(`Unknown type ${wallet.options.type}`);
     }
@@ -80,18 +75,5 @@ export class PolygonNetwork implements IBlockchain {
     const balance = await api.eth.getBalance(address);
     const freeBalance = await api.utils.fromWei(balance, 'ether');
     return +freeBalance;
-  }
-
-  public async getBalanceBiconomy(api: Web3, dappTankContractProxyAddress: string, fundingKey: string) {
-    if (!dappTankContractProxyAddress) {
-      throw new Error("Invalid Biconomy DappTankProxyContract address");
-    }
-    if (!fundingKey) {
-      throw new Error("Invalid Biconomy funding key");
-    }
-    const dappTankProxyContractInstance = new api.eth.Contract(dappTankContractAbi as AbiItem[], dappTankContractProxyAddress);
-    const balance = await dappTankProxyContractInstance.methods.dappBalances(fundingKey).call();
-    const balanceNormalized = await api.utils.fromWei(balance, 'ether');
-    return +balanceNormalized;
   }
 }
