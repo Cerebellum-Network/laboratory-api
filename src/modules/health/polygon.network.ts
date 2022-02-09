@@ -84,8 +84,9 @@ export class PolygonNetwork implements IBlockchain {
 
   public async getBalanceCustomToken(api: Web3, address: string, erc20TokenAddress: string): Promise<number> {
     const erc20TokenContractInstance = new api.eth.Contract(erc20Abi as AbiItem[], erc20TokenAddress);
-    const balance = await erc20TokenContractInstance.methods.balanceOf(address).call();
-    const decimals = await erc20TokenContractInstance.methods.decimals().call();
+    const results = await Promise.all([erc20TokenContractInstance.methods.balanceOf(address).call(), erc20TokenContractInstance.methods.decimals().call()]);
+    const balance = results[0];
+    const decimals = results[1];
     return +(balance / 10 ** decimals);
   }
 }
