@@ -3,6 +3,7 @@ import {IBlockchain} from './blockchain.interface';
 import Web3 from 'web3';
 import {ConfigService} from '../config/config.service';
 import {Wallet} from "./wallet.type";
+import {BalanceType} from "./balance-type.enum";
 
 export const POLYGON_NETWORK = 'POLYGON';
 
