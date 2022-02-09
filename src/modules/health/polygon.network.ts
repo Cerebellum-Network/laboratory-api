@@ -70,7 +70,7 @@ export class PolygonNetwork implements IBlockchain {
     }
     switch (wallet.options.type) {
       case BalanceType.ERC20_TOKEN:
-          return this.getBalanceCustomToken(api, wallet.address, wallet.options.erc20TokenAddress);
+          return this.getBalanceErc20Token(api, wallet.address, wallet.options.erc20TokenAddress);
       default:
         throw new Error(`Unknown type ${wallet.options.type}`);
     }
@@ -82,7 +82,7 @@ export class PolygonNetwork implements IBlockchain {
     return +freeBalance;
   }
 
-  public async getBalanceCustomToken(api: Web3, address: string, erc20TokenAddress: string): Promise<number> {
+  public async getBalanceErc20Token(api: Web3, address: string, erc20TokenAddress: string): Promise<number> {
     const erc20TokenContractInstance = new api.eth.Contract(erc20Abi as AbiItem[], erc20TokenAddress);
     const results = await Promise.all([erc20TokenContractInstance.methods.balanceOf(address).call(), erc20TokenContractInstance.methods.decimals().call()]);
     const balance = results[0];
