@@ -1,7 +1,11 @@
 import {Injectable, Logger} from '@nestjs/common';
-import {IBlockchain, Wallet} from './blockchain.interface';
+import {IBlockchain} from './blockchain.interface';
 import Web3 from 'web3';
 import {ConfigService} from '../config/config.service';
+import {Wallet} from "./wallet.type";
+import {AbiItem} from 'web3-utils'
+import dappTankContractAbi from "./abis/dappTankContractAbi.json";
+import {BalanceType} from "./balance-type.enum";
 
 export const POLYGON_NETWORK = 'POLYGON';
 
@@ -57,12 +61,37 @@ export class PolygonNetwork implements IBlockchain {
     return account;
   }
 
-  public async getBalance(wallet: string, network: string): Promise<number> {
-    this.logger.debug(`About to fetch balance for ${wallet}`);
+  public getBalance(wallet: Wallet, network: string): Promise<number> {
+    this.logger.debug(`About to fetch balance for '${wallet.name}' with address '${wallet.address}'`);
     this.hasNetwork(network);
     const {api} = this.getNetwork(network);
-    const balance = await api.eth.getBalance(wallet);
+    if (!wallet.options) {
+      return this.getBalanceNative(api, wallet.address);
+    }
+    switch (wallet.options.type) {
+      case BalanceType.BICONOMY:
+        return this.getBalanceBiconomy(api, wallet.options.biconomyDappGasTankProxyAddress, wallet.options.biconomyFundingKey);
+      default:
+        throw new Error(`Unknown type ${wallet.options.type}`);
+    }
+  }
+
+  public async getBalanceNative(api: Web3, address: string): Promise<number> {
+    const balance = await api.eth.getBalance(address);
     const freeBalance = await api.utils.fromWei(balance, 'ether');
     return +freeBalance;
+  }
+
+  public async getBalanceBiconomy(api: Web3, dappTankContractProxyAddress: string, fundingKey: string) {
+    if (!dappTankContractProxyAddress) {
+      throw new Error("Invalid Biconomy DappTankProxyContract address");
+    }
+    if (!fundingKey) {
+      throw new Error("Invalid Biconomy funding key");
+    }
+    const dappTankProxyContractInstance = new api.eth.Contract(dappTankContractAbi as AbiItem[], dappTankContractProxyAddress);
+    const balance = await dappTankProxyContractInstance.methods.dappBalances(fundingKey).call();
+    const balanceNormalized = await api.utils.fromWei(balance, 'ether');
+    return +balanceNormalized;
   }
 }

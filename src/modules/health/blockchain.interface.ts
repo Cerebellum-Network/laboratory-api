@@ -1,13 +1,8 @@
 import {BlockStatusDto} from './dto/block-status.dto';
-
-export type Wallet = {
-  address: string;
-  name: string;
-  minBalance: number;
-};
+import {Wallet} from "./wallet.type";
 
 export interface IBlockchain {
-  getBalance(wallet: string, network: string): Promise<number>;
+  getBalance(wallet: Wallet, network: string): Promise<number>;
   hasNetwork(network: string): boolean;
   getNetwork(network: string);
   getWallet(network: string, walletName: string);
