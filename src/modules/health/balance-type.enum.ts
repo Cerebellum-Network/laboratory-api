@@ -1,3 +1,3 @@
 export enum BalanceType {
-  CUSTOM_TOKEN = "CUSTOM_TOKEN",
+  ERC20_TOKEN = "ERC20_TOKEN",
 }

@@ -4,6 +4,8 @@ import Web3 from 'web3';
 import {ConfigService} from '../config/config.service';
 import {Wallet} from "./wallet.type";
 import {BalanceType} from "./balance-type.enum";
+import erc20Abi from "./abis/erc20Abi.json";
+import {AbiItem} from "web3-utils";
 
 export const POLYGON_NETWORK = 'POLYGON';
 
@@ -67,6 +69,8 @@ export class PolygonNetwork implements IBlockchain {
       return this.getBalanceNative(api, wallet.address);
     }
     switch (wallet.options.type) {
+      case BalanceType.ERC20_TOKEN:
+          return this.getBalanceCustomToken(api, wallet.address, wallet.options.erc20TokenAddress);
       default:
         throw new Error(`Unknown type ${wallet.options.type}`);
     }
@@ -76,5 +80,12 @@ export class PolygonNetwork implements IBlockchain {
     const balance = await api.eth.getBalance(address);
     const freeBalance = await api.utils.fromWei(balance, 'ether');
     return +freeBalance;
+  }
+
+  public async getBalanceCustomToken(api: Web3, address: string, erc20TokenAddress: string): Promise<number> {
+    const erc20TokenContractInstance = new api.eth.Contract(erc20Abi as AbiItem[], erc20TokenAddress);
+    const balance = await erc20TokenContractInstance.methods.balanceOf(address).call();
+    const decimals = await erc20TokenContractInstance.methods.decimals().call();
+    return +(balance / 10 ** decimals);
   }
 }
