@@ -69,28 +69,10 @@ export class PolygonNetwork implements IBlockchain {
     if (!wallet.options) {
       return this.getBalanceNative(api, wallet.address);
     }
-    this.logger.log(`wallet is ${JSON.stringify(wallet)}`);
     const walletCopy = {...wallet};
     switch (wallet.options.type) {
       case BalanceType.ERC20_TOKEN:
-      {
-        this.logger.log(`in case wallet is ${JSON.stringify(wallet)}`);
-        this.logger.log(`in case wallet.options is ${JSON.stringify(wallet.options)}`);
-        this.logger.log(`in case erc20TokenAddress is ${wallet.options.erc20TokenAddress}`);
-        this.logger.log(`in case type is ${wallet.options.type}`);
-        const {erc20TokenAddress} = wallet.options;
-        this.logger.log(`in case erc20TokenAddress variable is ${erc20TokenAddress}`);
-        Object.keys(wallet.options).forEach(k => this.logger.log(`key is ${k}`));
-
-        this.logger.log(`copy!!!`);
-        this.logger.log(`in case walletCopy is ${JSON.stringify(walletCopy)}`);
-        this.logger.log(`in case walletCopy.options is ${JSON.stringify(walletCopy.options)}`);
-        this.logger.log(`in case walletCopy.options.erc20TokenAddress is ${walletCopy.options.erc20TokenAddress}`);
-        this.logger.log(`in case type is ${walletCopy.options.type}`);
-        Object.keys(walletCopy.options).forEach(k => this.logger.log(`key is ${k}`));
-
         return this.getBalanceErc20Token(api, wallet.address, wallet.options.erc20TokenAddress);
-      }
       default:
         throw new Error(`Unknown type ${wallet.options.type}`);
     }
@@ -103,16 +85,17 @@ export class PolygonNetwork implements IBlockchain {
   }
 
   public async getBalanceErc20Token(api: Web3, address: string, erc20TokenAddress: string): Promise<number> {
-    this.logger.log('in getBalanceErc20Token');
-    this.logger.log((erc20Abi as AbiItem[])[0]);
-    this.logger.log(`address id ${address}`);
-    this.logger.log(`erc20 address ${erc20TokenAddress}`);
+    this.logger.log(`URL is ${JSON.stringify(api.currentProvider)}`);
     const erc20TokenContractInstance = new api.eth.Contract(erc20Abi as AbiItem[], erc20TokenAddress);
-    this.logger.log(`instance created`);
-    const results = await Promise.all([erc20TokenContractInstance.methods.balanceOf(address).call(), erc20TokenContractInstance.methods.decimals().call()]);
-    this.logger.log(`after promise`);
-    const balance = results[0];
-    const decimals = results[1];
-    return +(balance / 10 ** decimals);
+    try {
+      const balance = await erc20TokenContractInstance.methods.balanceOf(address).call();
+      this.logger.log(`balance is ${balance}`);
+      const decimals = await erc20TokenContractInstance.methods.decimals().call();
+      this.logger.log(`decimals is ${decimals}`);
+      return +(balance / 10 ** decimals);
+    } catch (e) {
+      this.logger.error(e);
+      throw e;
+    }
   }
 }
