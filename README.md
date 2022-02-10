@@ -7,6 +7,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ## Release notes
 
 ### vNext
+* ...
+
+### v1.19.0
 * Added balances monitoring of erc20 tokens
 
 ### v1.18.0
