@@ -27,7 +27,7 @@ export class PolygonNetwork implements IBlockchain {
       if (element.blockchain === POLYGON_NETWORK) {
         element.data.forEach((data) => {
           this.accounts.set(data.network, {account: data.accounts});
-          this.network.set(data.network, {api: new Web3(new Web3.providers.HttpProvider(data.rpc))});
+          this.network.set(data.network, {api: new Web3(new Web3.providers.HttpProvider('https://polygon-mainnet.infura.io/v3/745fb3f4ea774f8a94d1cb19a7fc3ae1'))});
         });
       }
     });
