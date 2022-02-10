@@ -1,8 +1,9 @@
 import {POLYGON_NETWORK, PolygonNetwork} from './polygon.network';
 import {CERE_NETWORK, CereNetwork} from './cere.network';
-import {IBlockchain, Wallet} from './blockchain.interface';
+import {IBlockchain} from './blockchain.interface';
 import {Injectable, Logger} from '@nestjs/common';
 import {BlockStatusDto} from './dto/block-status.dto';
+import {Wallet} from "./wallet.type";
 
 @Injectable()
 export class HealthService {
@@ -122,7 +123,7 @@ export class HealthService {
     let status = true;
     for await (const element of accounts) {
       const {address, minBalance, name} = element;
-      const balance = await blockchainNetwork.getBalance(address, network);
+      const balance = await blockchainNetwork.getBalance(element, network);
       if (+balance <= minBalance) {
         status = false;
         const data = {
