@@ -8,7 +8,7 @@
   "scripts": {
     "init": "npm i",
     "build": "rimraf dist && tsc -p tsconfig.build.json",
-    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"libs/**/*.ts\"",
+    "format": "prettier --write \"api/**/*.ts\" \"fetcher/**/*.ts\" \"libs/**/*.ts\"",
     "prestart:dev": "npm run typeorm:migration:run",
     "prestart:prod": "npm run typeorm:migration:run",
     "start:api-dev": "ts-node -r tsconfig-paths/register api/src/main.ts",
@@ -21,7 +21,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
+    "test:e2e": "jest --config ./api/test/jest-e2e.json",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js --config api/src/modules/database/ormconfig.ts",
     "typeorm:migration:create": "npm run typeorm -- migration:create -n",
     "typeorm:migration:run": "npm run typeorm -- migration:run"
@@ -109,8 +109,8 @@
     "coverageDirectory": "./coverage",
     "testEnvironment": "node",
     "roots": [
-      "<rootDir>/src/",
-      "<rootDir>/libs/"
+      "<rootDir>/libs/",
+      "<rootDir>/apps/"
     ],
     "moduleNameMapper": {
       "^@app/config(|/.*)$": "<rootDir>/libs/config/src/$1"
