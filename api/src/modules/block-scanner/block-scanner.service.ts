@@ -1,4 +1,4 @@
-import {MethodName} from "../shared/constant/methodName";
+import {MethodName} from "../../../../libs/constants/methodName";
 import {Injectable, Logger} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {ApiPromise, WsProvider} from '@polkadot/api';
@@ -18,7 +18,7 @@ import {toTransactionDto} from './mapper/transaction.mapper';
 import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
-import config from '../shared/constant/config';
+import config from '../../../../libs/constants/config';
 import Deferred from 'promise-deferred';
 
 export interface ISanitizedEvent {

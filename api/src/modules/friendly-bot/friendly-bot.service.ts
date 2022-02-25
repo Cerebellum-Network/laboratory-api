@@ -9,7 +9,7 @@ import moment from 'moment';
 import {PayoutEntity} from './entities/payout.entity';
 import {AssetDto} from './dto/assets.dto';
 import {BalanceDto} from './dto/balance.dto';
-import config from '../shared/constant/config';
+import config from '../../../../libs/constants/config';
 import {formatBalance} from '@polkadot/util';
 
 @Injectable()

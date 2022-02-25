@@ -1,7 +1,7 @@
 import {ConfigService} from '../../../../libs/config/src';
 import {Logger} from '@nestjs/common';
 import {ApiPromise, WsProvider} from '@polkadot/api';
-import config from '../shared/constant/config';
+import config from '../../../../libs/constants/config';
 import {IBlockchain, Wallet} from './blockchain.interface';
 import {Repository} from 'typeorm';
 import {InjectRepository} from '@nestjs/typeorm';
