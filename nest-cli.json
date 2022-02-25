@@ -31,6 +31,15 @@
       "compilerOptions": {
         "tsConfigPath": "libs/database/tsconfig.lib.json"
       }
+    },
+    "fetcher": {
+      "type": "application",
+      "root": "apps/fetcher",
+      "entryFile": "main",
+      "sourceRoot": "apps/fetcher/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/fetcher/tsconfig.app.json"
+      }
     }
   },
   "compilerOptions": {

@@ -6,6 +6,8 @@ import {version} from '../../../package.json';
 import {NestFactory} from '@nestjs/core';
 import bodyParser from 'body-parser';
 import {NestExpressApplication} from '@nestjs/platform-express';
+import {BlockScannerModule} from './modules/block-scanner/block-scanner.module';
+import {BlockScannerService} from './modules/block-scanner/block-scanner.service';
 
 async function bootstrap() {
   const servicePrefix = 'laboratory';
@@ -58,10 +60,13 @@ async function bootstrap() {
   const document = SwaggerModule.createDocument(app, options);
   SwaggerModule.setup(`${servicePrefix}/swagger`, app, document);
 
+  const blockScannerService = app.select(BlockScannerModule).get(BlockScannerService);
+  blockScannerService.init();
+
   app.setGlobalPrefix(servicePrefix);
   app.useGlobalPipes(new ValidationPipe({transform: true}));
 
-  await app.listen(configService.get('PORT') || 1111);
+  await app.listen(configService.get('FETCHER_PORT') || 1111);
 }
 
 bootstrap();

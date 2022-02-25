@@ -11,7 +11,8 @@
     "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "prestart:dev": "npm run typeorm:migration:run",
     "prestart:prod": "npm run typeorm:migration:run",
-    "start:api-dev": "ts-node -r tsconfig-paths/register apps/api/src/main.ts",
+    "start:api": "ts-node -r tsconfig-paths/register apps/api/src/main.ts",
+    "start:fetcher": "ts-node -r tsconfig-paths/register apps/fetcher/src/main.ts",
     "start:dev": "nodemon --exec \"npm run lint && ts-node apps/api/src/main.ts\"",
     "start:debug": "tsc-watch -p tsconfig.build.json --onSuccess \"node --inspect-brk dist/main.js\"",
     "start:prod": "node dist/src/main.js",
@@ -21,7 +22,7 @@
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./api/test/jest-e2e.json",
+    "test:e2e": "jest --config ./api/apps/Cerebellum-Network-laboratory-api/test/jest-e2e.json",
     "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js --config libs/database/src/ormconfig.ts",
     "typeorm:migration:create": "npm run typeorm -- migration:create -n",
     "typeorm:migration:run": "npm run typeorm -- migration:run"
