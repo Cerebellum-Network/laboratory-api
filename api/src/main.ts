@@ -1,6 +1,5 @@
 import {AppModule} from './app.module';
-import {ConfigModule} from './modules/config/config.module';
-import {ConfigService} from './modules/config/config.service';
+import {ConfigModule, ConfigService} from '../../libs/config/src';
 import {ValidationPipe} from '@nestjs/common';
 import {DocumentBuilder, SwaggerModule} from '@nestjs/swagger';
 import {version} from '../../package.json';

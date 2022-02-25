@@ -6,7 +6,7 @@ import {BlockEntity} from './entities/block.entity';
 import {TransactionEntity} from './entities/transaction.entity';
 import {getConnection, Repository} from 'typeorm';
 import {InjectRepository} from '@nestjs/typeorm';
-import {ConfigService} from '../config/config.service';
+import {ConfigService} from '../../../../libs/config/src';
 import {toBlockDto} from './mapper/position.mapper';
 import {GenericEventData, Struct} from '@polkadot/types';
 import {formatBalance, u8aToHex} from '@polkadot/util';

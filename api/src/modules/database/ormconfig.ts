@@ -1,4 +1,4 @@
-import {ConfigService} from '../config/config.service';
+import {ConfigService} from '../../../../libs/config/src';
 import {TypeOrmModuleOptions} from '@nestjs/typeorm';
 
 const configService = ConfigService.getDefaultInstance();

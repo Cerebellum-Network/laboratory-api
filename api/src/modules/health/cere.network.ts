@@ -1,4 +1,4 @@
-import {ConfigService} from '../config/config.service';
+import {ConfigService} from '../../../../libs/config/src';
 import {Logger} from '@nestjs/common';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import config from '../shared/constant/config';

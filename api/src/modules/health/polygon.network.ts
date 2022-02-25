@@ -1,7 +1,7 @@
 import {Injectable, Logger} from '@nestjs/common';
 import {IBlockchain, Wallet} from './blockchain.interface';
 import Web3 from 'web3';
-import {ConfigService} from '../config/config.service';
+import {ConfigService} from '../../../../libs/config/src';
 
 export const POLYGON_NETWORK = 'POLYGON';
 

@@ -1,7 +1,7 @@
 import {Repository} from 'typeorm';
 import {BadRequestException, Injectable, Logger} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
-import {ConfigService} from '../config/config.service';
+import {ConfigService} from '../../../../libs/config/src';
 import {FriendlyBotServiceInterface} from './friendly-bot.interface';
 import {ApiPromise, Keyring, WsProvider} from '@polkadot/api';
 import {KeypairType} from '@polkadot/util-crypto/types';

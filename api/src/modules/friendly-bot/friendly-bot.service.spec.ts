@@ -1,4 +1,4 @@
-import {ConfigModule} from '../config/config.module';
+import {ConfigModule} from '../../../../libs/config/src';
 import {Test, TestingModule} from '@nestjs/testing';
 import {getRepositoryToken} from '@nestjs/typeorm';
 import {Repository} from 'typeorm';

@@ -8,7 +8,7 @@
   "scripts": {
     "init": "npm i",
     "build": "rimraf dist && tsc -p tsconfig.build.json",
-    "format": "prettier --write \"src/**/*.ts\"",
+    "format": "prettier --write \"src/**/*.ts\" \"test/**/*.ts\" \"libs/**/*.ts\"",
     "prestart:dev": "npm run typeorm:migration:run",
     "prestart:prod": "npm run typeorm:migration:run",
     "start:api-dev": "ts-node -r tsconfig-paths/register api/src/main.ts",
@@ -101,12 +101,19 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "rootDir": ".",
     "testRegex": ".spec.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "coverageDirectory": "./coverage",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/src/",
+      "<rootDir>/libs/"
+    ],
+    "moduleNameMapper": {
+      "^@app/config(|/.*)$": "<rootDir>/libs/config/src/$1"
+    }
   }
 }

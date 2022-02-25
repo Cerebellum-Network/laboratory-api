@@ -1,5 +1,5 @@
 import {Injectable, Logger, BadRequestException} from '@nestjs/common';
-import {ConfigService} from '../config/config.service';
+import {ConfigService} from '../../../../libs/config/src';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import Axios from 'axios';
 import {formatBalance, stringToU8a} from '@polkadot/util';
