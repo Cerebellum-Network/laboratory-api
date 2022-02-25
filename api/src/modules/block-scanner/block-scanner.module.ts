@@ -1,7 +1,6 @@
 import {Module} from '@nestjs/common';
 import {BlockScannerController} from './block-scanner.controller';
 import {BlockScannerService} from './block-scanner.service';
-// import {ConfigModule} from '../config/config.module';
 import {ConfigModule} from '../../../../libs/config/src';
 import {TypeOrmModule} from '@nestjs/typeorm';
 import {BlockEntity} from './entities/block.entity';
