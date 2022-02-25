@@ -1,4 +1,4 @@
-import {MethodName} from "../../../../libs/constants/methodName";
+import {MethodName} from "../../../../../libs/constants/methodName";
 import {Injectable, Logger} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {ApiPromise, WsProvider} from '@polkadot/api';
@@ -6,7 +6,7 @@ import {BlockEntity} from './entities/block.entity';
 import {TransactionEntity} from './entities/transaction.entity';
 import {getConnection, Repository} from 'typeorm';
 import {InjectRepository} from '@nestjs/typeorm';
-import {ConfigService} from '../../../../libs/config/src';
+import {ConfigService} from '../../../../../libs/config/src';
 import {toBlockDto} from './mapper/position.mapper';
 import {GenericEventData, Struct} from '@polkadot/types';
 import {formatBalance, u8aToHex} from '@polkadot/util';
@@ -18,7 +18,7 @@ import {toTransactionDto} from './mapper/transaction.mapper';
 import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
-import config from '../../../../libs/constants/config';
+import config from '../../../../../libs/constants/config';
 import Deferred from 'promise-deferred';
 
 export interface ISanitizedEvent {

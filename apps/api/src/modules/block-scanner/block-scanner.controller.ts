@@ -7,7 +7,7 @@ import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
 import {BalanceDto} from './dto/balance.dto';
 import {PostRestartRequestDto} from './dto/restart.dto';
-import {ConfigService} from '../../../../libs/config/src';
+import {ConfigService} from '../../../../../libs/config/src';
 
 @Controller('block-scanner')
 @ApiInternalServerErrorResponse({description: 'Internal server error.'})

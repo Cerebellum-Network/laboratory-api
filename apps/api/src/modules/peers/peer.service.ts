@@ -1,9 +1,9 @@
 import {Injectable, Logger, BadRequestException} from '@nestjs/common';
-import {ConfigService} from '../../../../libs/config/src';
+import {ConfigService} from '../../../../../libs/config/src';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import Axios from 'axios';
 import {formatBalance, stringToU8a} from '@polkadot/util';
-import config from '../../../../libs/constants/config';
+import config from '../../../../../libs/constants/config';
 @Injectable()
 export class PeerService {
   public logger = new Logger(PeerService.name);

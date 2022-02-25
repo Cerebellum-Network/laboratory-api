@@ -1,6 +1,6 @@
 import {ApiInternalServerErrorResponse, ApiGatewayTimeoutResponse, ApiTags} from '@nestjs/swagger';
 import {Controller, Logger, Get, Inject, Param} from '@nestjs/common';
-import {ConfigService} from '../../../../libs/config/src';
+import {ConfigService} from '../../../../../libs/config/src';
 import {PeerService} from './peer.service';
 
 @Controller('peer')

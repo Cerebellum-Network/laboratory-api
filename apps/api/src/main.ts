@@ -1,8 +1,8 @@
 import {AppModule} from './app.module';
-import {ConfigModule, ConfigService} from '../../libs/config/src';
+import {ConfigModule, ConfigService} from '../../../libs/config/src';
 import {ValidationPipe} from '@nestjs/common';
 import {DocumentBuilder, SwaggerModule} from '@nestjs/swagger';
-import {version} from '../../package.json';
+import {version} from '../../../package.json';
 import {BlockScannerModule} from './modules/block-scanner/block-scanner.module';
 import {BlockScannerService} from './modules/block-scanner/block-scanner.service';
 import {NestFactory} from '@nestjs/core';

@@ -1,5 +1,5 @@
 import {Module} from '@nestjs/common';
-import {ConfigModule} from '../../../../libs/config/src';
+import {ConfigModule} from '../../../../../libs/config/src';
 import {PeerController} from './peer.controller';
 import {PeerService} from './peer.service';
 

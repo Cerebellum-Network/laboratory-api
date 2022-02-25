@@ -1,7 +1,7 @@
 import {Repository} from 'typeorm';
 import {BadRequestException, Injectable, Logger} from '@nestjs/common';
 import {InjectRepository} from '@nestjs/typeorm';
-import {ConfigService} from '../../../../libs/config/src';
+import {ConfigService} from '../../../../../libs/config/src';
 import {FriendlyBotServiceInterface} from './friendly-bot.interface';
 import {ApiPromise, Keyring, WsProvider} from '@polkadot/api';
 import {KeypairType} from '@polkadot/util-crypto/types';
@@ -9,7 +9,7 @@ import moment from 'moment';
 import {PayoutEntity} from './entities/payout.entity';
 import {AssetDto} from './dto/assets.dto';
 import {BalanceDto} from './dto/balance.dto';
-import config from '../../../../libs/constants/config';
+import config from '../../../../../libs/constants/config';
 import {formatBalance} from '@polkadot/util';
 
 @Injectable()

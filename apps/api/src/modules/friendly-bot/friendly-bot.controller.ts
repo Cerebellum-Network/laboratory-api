@@ -1,7 +1,7 @@
 import {ApiInternalServerErrorResponse, ApiGatewayTimeoutResponse, ApiTags} from '@nestjs/swagger';
 import {Controller, Inject, Post, Body, Logger, UseInterceptors} from '@nestjs/common';
 import {RateLimit, RateLimiterInterceptor} from 'nestjs-rate-limiter';
-import {ConfigService} from '../../../../libs/config/src';
+import {ConfigService} from '../../../../../libs/config/src';
 import {FriendlyBotService} from './friendly-bot.service';
 import {AssetDto} from './dto/assets.dto';
 import {PostAssetRequestDto} from './dto/post-asset-request.dto';
