@@ -3,7 +3,7 @@ import {ConfigModule} from './modules/config/config.module';
 import {ConfigService} from './modules/config/config.service';
 import {ValidationPipe} from '@nestjs/common';
 import {DocumentBuilder, SwaggerModule} from '@nestjs/swagger';
-import {version} from '../package.json';
+import {version} from '../../package.json';
 import {BlockScannerModule} from './modules/block-scanner/block-scanner.module';
 import {BlockScannerService} from './modules/block-scanner/block-scanner.service';
 import {NestFactory} from '@nestjs/core';
