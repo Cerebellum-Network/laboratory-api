@@ -3,7 +3,7 @@ import {HealthModule} from './modules/health/health.module';
 import {Module} from '@nestjs/common';
 import {DatabaseModule} from '../../../libs/database/src'
 import {ConfigModule} from '../../../libs/config/src';
-import {HealthCheckController} from './controllers/health-check.controller';
+import {HealthCheckController} from '../../../libs/health/src'
 import {FriendlyBotModule} from './modules/friendly-bot/friendly-bot.module';
 import {PeerModule} from './modules/peers/peer.module';
 @Module({

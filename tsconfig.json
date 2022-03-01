@@ -18,6 +18,12 @@
       ],
       "@app/config/*": [
         "libs/config/src/*"
+      ],
+      "@app/health": [
+        "libs/health/src"
+      ],
+      "@app/health/*": [
+        "libs/health/src/*"
       ]
     }
   },
