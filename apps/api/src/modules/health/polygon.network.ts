@@ -1,7 +1,11 @@
 import {Injectable, Logger} from '@nestjs/common';
-import {IBlockchain, Wallet} from './blockchain.interface';
+import {IBlockchain} from './blockchain.interface';
 import Web3 from 'web3';
 import {ConfigService} from '../../../../../libs/config/src';
+import {Wallet} from "./wallet.type";
+import {BalanceType} from "./balance-type.enum";
+import erc20Abi from "./abis/erc20Abi.json";
+import {AbiItem} from "web3-utils";
 
 export const POLYGON_NETWORK = 'POLYGON';
 
@@ -57,12 +61,32 @@ export class PolygonNetwork implements IBlockchain {
     return account;
   }
 
-  public async getBalance(wallet: string, network: string): Promise<number> {
-    this.logger.debug(`About to fetch balance for ${wallet}`);
+  public getBalance(wallet: Wallet, network: string): Promise<number> {
+    this.logger.debug(`About to fetch balance for '${wallet.name}' with address '${wallet.address}'`);
     this.hasNetwork(network);
     const {api} = this.getNetwork(network);
-    const balance = await api.eth.getBalance(wallet);
+    if (!wallet.options) {
+      return this.getBalanceNative(api, wallet.address);
+    }
+    switch (wallet.options.type) {
+      case BalanceType.ERC20_TOKEN:
+          return this.getBalanceErc20Token(api, wallet.address, wallet.options.erc20TokenAddress);
+      default:
+        throw new Error(`Unknown type ${wallet.options.type}`);
+    }
+  }
+
+  public async getBalanceNative(api: Web3, address: string): Promise<number> {
+    const balance = await api.eth.getBalance(address);
     const freeBalance = await api.utils.fromWei(balance, 'ether');
     return +freeBalance;
+  }
+
+  public async getBalanceErc20Token(api: Web3, address: string, erc20TokenAddress: string): Promise<number> {
+    const erc20TokenContractInstance = new api.eth.Contract(erc20Abi as AbiItem[], erc20TokenAddress);
+    const results = await Promise.all([erc20TokenContractInstance.methods.balanceOf(address).call(), erc20TokenContractInstance.methods.decimals().call()]);
+    const balance = results[0];
+    const decimals = results[1];
+    return +(balance / 10 ** decimals);
   }
 }

@@ -123,15 +123,4 @@ export class PeerService {
     const formatedValue = formatBalance(totalIssuance, {decimals: decimal});
     return formatedValue;
   }
-
-  /**
-   * Get DDC metrics using curl
-   * @returns ddc metrics
-   */
-  public async ddcMetric(): Promise<any> {
-    const ddcMetricUrl = await this.configService.get('DDC_METRIC_URL');
-    const response = await (await Axios.get(`${ddcMetricUrl}/network/capacity`)).data;
-
-    return response;
-  }
 }

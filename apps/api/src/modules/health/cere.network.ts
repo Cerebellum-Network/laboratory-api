@@ -2,13 +2,14 @@ import {ConfigService} from '../../../../../libs/config/src';
 import {Logger} from '@nestjs/common';
 import {ApiPromise, WsProvider} from '@polkadot/api';
 import config from '../../../../../libs/constants/config';
-import {IBlockchain, Wallet} from './blockchain.interface';
+import {IBlockchain} from './blockchain.interface';
 import {Repository} from 'typeorm';
 import {InjectRepository} from '@nestjs/typeorm';
 import {ValidatorEntity} from './entities/validator.entity';
 import {validatorStatus} from './validatorStatus.enum';
 import {Cron} from '@nestjs/schedule';
 import {BlockStatusDto} from './dto/block-status.dto';
+import {Wallet} from "./wallet.type";
 
 export const CERE_NETWORK = 'CERE';
 
@@ -101,12 +102,12 @@ export class CereNetwork implements IBlockchain {
     return account;
   }
 
-  public async getBalance(wallet: string, network: string): Promise<number> {
-    this.logger.debug(`About to fetch balance for ${wallet}`);
+  public async getBalance(wallet: Wallet, network: string): Promise<number> {
+    this.logger.debug(`About to fetch balance for ${wallet.address}`);
     this.hasNetwork(network);
     const {api} = this.getNetwork(network);
     const decimal = api.registry.chainDecimals;
-    const accountData = await api.query.system.account(wallet);
+    const accountData = await api.query.system.account(wallet.address);
     const freeBalance = +accountData.data.free / 10 ** +decimal;
     return freeBalance;
   }

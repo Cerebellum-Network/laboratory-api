@@ -9,6 +9,13 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### vNext
 * Separated api and fetcher into individual application
 
+### v1.19.0
+* Added balances monitoring of erc20 tokens
+
+### v1.18.0
+* Fixed network scan
+* Removed ddc metrics endpoint
+
 ### v1.17.0
 * Fixed memory leak issue in block-scanner module
 

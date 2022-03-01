@@ -1,7 +1,7 @@
 {
   "name": "@Cerebellum-Network/laboratory-api",
   "repository": "git://github.com/Cerebellum-Network/laboratory-api.git",
-  "version": "1.17.0",
+  "version": "1.19.0",
   "description": "",
   "author": "",
   "license": "MIT",
@@ -71,7 +71,8 @@
     "sprintf-js": "^1.1.2",
     "swagger-ui-express": "^4.1.4",
     "typeorm": "^0.2.31",
-    "web3": "^1.5.2"
+    "web3": "^1.5.2",
+    "web3-utils": "^1.7.0"
   },
   "devDependencies": {
     "@nestjs/testing": "^6.11.4",
