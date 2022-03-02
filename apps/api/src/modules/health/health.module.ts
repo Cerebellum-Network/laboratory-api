@@ -3,7 +3,6 @@ import {TypeOrmModule} from '@nestjs/typeorm';
 import {HealthService} from './health.service';
 import {HealthController} from './health.controller';
 import {Module} from '@nestjs/common';
-// import {ConfigModule} from '../config/config.module';
 import {ConfigModule} from '../../../../../libs/config/src/config.module'
 import {CereNetwork} from './cere.network';
 import {PolygonNetwork} from './polygon.network';
