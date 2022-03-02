@@ -52,7 +52,7 @@ async function bootstrap() {
   app.enableCors();
 
   const options = new DocumentBuilder()
-    .setTitle('Laboratory API')
+    .setTitle('Laboratory Fetcher')
     .setDescription('Laboratory API description')
     .setVersion(version)
     .addServer(`/${servicePrefix}`)
