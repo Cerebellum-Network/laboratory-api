@@ -1,18 +1,6 @@
 version: '3.7'
 
 services:
-  caddy:
-    image: abiosoft/caddy:no-stats
-    container_name: caddy
-    restart: always
-    environment:
-      ACME_AGREE: "true"
-    ports:
-      - 80:80
-      - 443:443
-    volumes:
-      - ./Caddyfile:/etc/Caddyfile
-      - ./caddy:/root/.caddy
   cere-block-scanner-service:
     build:
       context: ./
