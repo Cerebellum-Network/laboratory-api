@@ -21,7 +21,8 @@ export class ConfigService implements IConfigService {
   }
 
   public static getDefaultInstance(): IConfigService {
-    const path = `${process.cwd()}/.env.${getEnv()}`;
+    const appFolderPath = process.argv[2];
+    const path = `${process.cwd()}/${appFolderPath}/.env.${getEnv()}`;
     return new ConfigService(path);
   }
 }
