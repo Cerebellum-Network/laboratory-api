@@ -1,38 +1,75 @@
 version: '3.7'
 
 services:
-  cere-block-scanner-service:
+  api:
     build:
       context: ./
-    container_name: cere-block-scanner-service
-    restart: always
-    ports:
-      - 2015:2015
-    logging:
-      driver: json-file
+      dockerfile: ./apps/api/Dockerfile
+    container_name: api
     environment:
-      - DB_HOST=cere-block-scanner-db
+      - DB_HOST=postgres
       - DB_USERNAME=block-scanner-service
       - DB_PASSWORD=block-scanner-service
       - DB_DATABASE=block-scanner-service
       - DB_PORT=5432
       - DB_SYNCHRONIZE=true
-      - DB_LOGGING=true
-      - DB_ENTITIES=**/*.entity.js
-      - DB_CONNECTION_ALIVE=false
+      - DB_LOGGING=false
+      - DB_ENTITIES=dist/**/*.entity{.ts,.js} dist/**/*.entity.ts
+      - DB_CONNECTION_ALIVE=true
+      - MIGRATIONS_DIR=dist/api/src/migrations
+      - MIGRATIONS_FILES=*.ts
+      - PORT=2015
       - LOG_LEVEL=debug
-      - NETWORK_WS_URL=wss://testnet-node-1.cere.network:9945
-      - MAX_BALANCE=1
-      - NUMBER_OF_TOKENS_TO_SEND=1000000000000000000
+      - NETWORKS=[{"URL":"wss://archive.mainnet.cere.network:9945","FAUCET":{},"PASSWORD":"","NETWORK":"MAINNET"},{"URL":"wss://archive.mainnet.cere.network:9945","FAUCET":{},"PASSWORD":"","NETWORK":"TESTNET"},{"URL":"wss://archive.testnet.cere.network:9945","FAUCET":{},"PASSWORD":"","NETWORK":"QANET"},{"URL":"wss://archive.devnet.cere.network:9945","FAUCET":{},"PASSWORD":"","NETWORK":"DEVNET"}]
+      - NUMBER_OF_TOKENS_TO_SEND=10
       - REQUEST_PER_DAY=100
       - REQUEST_PER_IP_PER_DAY=3
+      - BLOCK_DIFFERENCE=10
+      - BLOCK_PRODUCTION_DIFF=15
+      - HEALTH_ACCOUNTS=[{"blockchain":"CERE","data":[{"network":"DEVNET","rpc":"wss://archive.devnet.cere.network:9945","accounts":[{"address":"5EYCAe5g7bGpFHagwe26HiRHdHdE3hobrwV6hq1UD2BPAiZb","name":"bridge-account","minBalance":100},{"address":"5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y","name":"relayer-account","minBalance":100}]},{"network":"MAINNET","rpc":"wss://archive.mainnet.cere.network:9945","accounts":[{"address":"5EYCAe5g7bGpFHagwe26HiRHdHdE3hobrwV6hq1UD2BPAiZb","name":"bridge-account","minBalance":1}]}]},{"blockchain":"POLYGON","data":[{"network":"TESTNET","accounts":[{"address":"0x0aA6c4c84009Fd0fE84A97D30A1fEe1362834409","name":"bridge-account","minBalance":1}],"rpc":"https://speedy-nodes-nyc.moralis.io/222e9489703e5fe672a8429e/polygon/mumbai"},{"network":"MAINNET","accounts":[{"address":"0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270","name":"bridge-account","minBalance":1},{"address":"0x1837fEc6C35A8158b34D9b33397dFde60Db1C501","name":"account","minBalance":1},{"address":"0x4478e3B0B71531DAc9d0ECe9357eBB0043669804","name":"fiat-gateway-contract","minBalance":1,"options":{"type":"ERC20_TOKEN","erc20TokenAddress":"0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"}}],"rpc":"https://speedy-nodes-nyc.moralis.io/222e9489703e5fe672a8429e/polygon/mainnet"}]}]
+    ports:
+      - 2015:2015
+    logging:
+      driver: json-file
+    links:
+      - postgres
 
-    depends_on:
-      - cere-block-scanner-db
-
-  cere-block-scanner-db:
+  fetcher:
+    build:
+      context: ./
+      dockerfile: ./apps/fetcher/Dockerfile
+    container_name: fetcher
+    environment:
+      - DB_HOST=postgres
+      - DB_USERNAME=block-scanner-service
+      - DB_PASSWORD=block-scanner-service
+      - DB_DATABASE=block-scanner-service
+      - DB_PORT=5432
+      - DB_SYNCHRONIZE=true
+      - DB_LOGGING=false
+      - DB_ENTITIES=dist/**/*.entity{.ts,.js} dist/**/*.entity.ts
+      - DB_CONNECTION_ALIVE=true
+      - MIGRATIONS_DIR=dist/api/src/migrations
+      - MIGRATIONS_FILES=*.ts
+      - PORT=2015
+      - LOG_LEVEL=debug
+      - NETWORKS=[{"URL":"wss://archive.mainnet.cere.network:9945","FAUCET":{},"PASSWORD":"","NETWORK":"MAINNET"},{"URL":"wss://archive.mainnet.cere.network:9945","FAUCET":{},"PASSWORD":"","NETWORK":"TESTNET"},{"URL":"wss://archive.testnet.cere.network:9945","FAUCET":{},"PASSWORD":"","NETWORK":"QANET"},{"URL":"wss://archive.devnet.cere.network:9945","FAUCET":{},"PASSWORD":"","NETWORK":"DEVNET"}]
+      - PORT=2016
+      - ACCESS_KEY_FOR_RESTART=mbHcCRQn9q4xF4D3
+      - DELAY_TIME_MS=12000
+      - HEALTH_ACCOUNTS=[{"blockchain":"CERE","data":[{"network":"DEVNET","rpc":"wss://archive.devnet.cere.network:9945","accounts":[{"address":"5EYCAe5g7bGpFHagwe26HiRHdHdE3hobrwV6hq1UD2BPAiZb","name":"bridge-account","minBalance":100},{"address":"5FLSigC9HGRKVhB9FiEo4Y3koPsNmBmLJbpXg2mp1hXcS59Y","name":"relayer-account","minBalance":100}]},{"network":"MAINNET","rpc":"wss://archive.mainnet.cere.network:9945","accounts":[{"address":"5EYCAe5g7bGpFHagwe26HiRHdHdE3hobrwV6hq1UD2BPAiZb","name":"bridge-account","minBalance":1}]}]},{"blockchain":"POLYGON","data":[{"network":"TESTNET","accounts":[{"address":"0x0aA6c4c84009Fd0fE84A97D30A1fEe1362834409","name":"bridge-account","minBalance":1}],"rpc":"https://speedy-nodes-nyc.moralis.io/222e9489703e5fe672a8429e/polygon/mumbai"},{"network":"MAINNET","accounts":[{"address":"0x0d500B1d8E8eF31E21C99d1Db9A6444d3ADf1270","name":"bridge-account","minBalance":1},{"address":"0x1837fEc6C35A8158b34D9b33397dFde60Db1C501","name":"account","minBalance":1},{"address":"0x4478e3B0B71531DAc9d0ECe9357eBB0043669804","name":"fiat-gateway-contract","minBalance":1,"options":{"type":"ERC20_TOKEN","erc20TokenAddress":"0x2791Bca1f2de4661ED88A30C99A7a9449Aa84174"}}],"rpc":"https://speedy-nodes-nyc.moralis.io/222e9489703e5fe672a8429e/polygon/mainnet"}]}]
+    ports:
+      - 2016:2016
+    logging:
+      driver: json-file
+    links:
+      - postgres
+  
+  postgres:
     image: postgres:9-alpine
-    container_name: cere-block-scanner-db
+    container_name: postgres
+    ports:
+      - 5432:5432
     environment:
       POSTGRES_USER: block-scanner-service
       POSTGRES_PASSWORD: block-scanner-service
@@ -40,5 +77,3 @@ services:
       PGDATA: /var/lib/postgresql/data/pgdata
     volumes:
       - ./pgdata-block-scanner/:/var/lib/postgresql/data/pgdata
-    logging:
-      driver: none
