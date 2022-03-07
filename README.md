@@ -157,14 +157,23 @@ http://localhost:2015/laboratory/swagger/#/
 ## Running the app
 
 ```bash
-# local
-$ nvm exec npm run start
+# development mode
+# api
+$ nvm exec npm run start:dev:api
 
-# watch mode
-$ nvm exec npm run start:dev
+# fetcher
+$ nvm exec npm run start:dev:fetcher
 
 # production mode
-$ nvm exec npm run start:prod
+# api
+$ nvm exec npm run build:api
+$ nvm exec npm run start:prod:api
+
+# fetcher
+$ nvm exec npm run build:fetcher
+$ nvm exec npm run start:prod:fetcher
+
+
 ```
 
 ## Create and run migrations
@@ -192,13 +201,10 @@ $ nvm exec npm run test:cov
 
 ## Packaging 
 ### Run project from docker-compose:
-* Send files to the host (optional):
-```bash
-rsync -av -e ssh --exclude='.idea' --exclude='.git' --exclude='node_modules' --exclude='dist' --exclude='pgdata-block-scanner' ./ laboratory_api:/root/block-scanner
 ```
 * Start service
-```
-docker-compose up -d cere-block-scanner-service cere-block-scanner-db
+```bash
+docker-compose up
 ```
 
 ## License 
