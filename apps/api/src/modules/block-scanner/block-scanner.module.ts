@@ -6,7 +6,7 @@ import {TypeOrmModule} from '@nestjs/typeorm';
 import {BlockEntity} from '../../../../../libs/block-scanner/src/entities/block.entity';
 import {TransactionEntity} from '../../../../../libs/block-scanner/src/entities/transaction.entity';
 @Module({
-  imports: [ConfigModule, TypeOrmModule.forFeature([BlockEntity, TransactionEntity]), ConfigModule],
+  imports: [ConfigModule, TypeOrmModule.forFeature([BlockEntity, TransactionEntity])],
   controllers: [BlockScannerController],
   providers: [BlockScannerService],
   exports: [],
