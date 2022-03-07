@@ -14,7 +14,7 @@ const ormConfig: TypeOrmModuleOptions = {
   password: configService.get('DB_PASSWORD'),
   database: configService.get('DB_DATABASE'),
   synchronize: !!configService.get('DB_SYNCHRONIZE'),
-  entities: [configService.get('DB_ENTITIES')],
+  entities: configService.get('DB_ENTITIES').split(' '),
   logging: configService.get('DB_LOGGING') && configService.get('DB_LOGGING') === 'true',
   maxQueryExecutionTime: parseInt(configService.get('DB_MAX_QUERY_EXECUTION_TIME') || '100', 10),
   keepConnectionAlive: !!configService.get('DB_CONNECTION_ALIVE'),

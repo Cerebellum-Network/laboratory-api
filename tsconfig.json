@@ -24,6 +24,12 @@
       ],
       "@app/health/*": [
         "libs/health/src/*"
+      ],
+      "@app/block-scanner": [
+        "libs/block-scanner/src"
+      ],
+      "@app/block-scanner/*": [
+        "libs/block-scanner/src/*"
       ]
     }
   },

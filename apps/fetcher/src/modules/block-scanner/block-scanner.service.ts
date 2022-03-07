@@ -2,24 +2,20 @@ import {MethodName} from "../../../../../libs/constants/methodName";
 import {Injectable, Logger} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {ApiPromise, WsProvider} from '@polkadot/api';
-import {BlockEntity} from './entities/block.entity';
-import {TransactionEntity} from './entities/transaction.entity';
 import {getConnection, Repository} from 'typeorm';
 import {InjectRepository} from '@nestjs/typeorm';
 import {ConfigService} from '../../../../../libs/config/src';
-import {toBlockDto} from './mapper/position.mapper';
 import {GenericEventData, Struct} from '@polkadot/types';
-import {formatBalance, u8aToHex} from '@polkadot/util';
+import {u8aToHex} from '@polkadot/util';
 import {blake2AsU8a} from '@polkadot/util-crypto';
 import {BlockHash} from '@polkadot/types/interfaces/chain';
 import {GenericCall} from '@polkadot/types/generic';
 import {Codec, Registry} from '@polkadot/types/types';
-import {toTransactionDto} from './mapper/transaction.mapper';
-import {TransactionsDataDto} from './dto/transactions-data.dto';
-import {BlocksDataDto} from './dto/blocks-data.dto';
 import {LatestBlockDto} from './dto/latest-block.dto';
 import config from '../../../../../libs/constants/config';
 import Deferred from 'promise-deferred';
+import {BlockEntity} from '../../../../../libs/block-scanner/src/entities/block.entity';
+import {TransactionEntity} from '../../../../../libs/block-scanner/src/entities/transaction.entity';
 
 export interface ISanitizedEvent {
   method: string;
@@ -196,52 +192,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     }
   }
 
-  public async getAccountBlocks(
-    accountId: string,
-    offset: number,
-    limit: number,
-    network: string,
-  ): Promise<BlocksDataDto> {
-    this.logger.debug('About to fetch the Block');
-
-    const [result, count] = await this.blockEntityRepository.findAndCount({
-      where: {authorPublicKey: accountId, networkType: network},
-      take: limit,
-      skip: offset,
-    });
-
-    this.logger.debug(result);
-    const data = await result.map((block) => toBlockDto(block));
-
-    return new BlocksDataDto(data, count);
-  }
-
-  public async getTransactions(
-    accountId: string,
-    offset: number,
-    limit: number,
-    network: string,
-  ): Promise<TransactionsDataDto> {
-    this.logger.debug('About to fetch the transaction');
-    const balance = await this.getBalance(accountId, network);
-    const [result, count] = await this.transactionEntityRepository.findAndCount({
-      relations: ['block'],
-      where: {
-        senderId: accountId,
-        networkType: network,
-      },
-      take: limit,
-      skip: offset,
-      order: {
-        timestamp: 'DESC'
-      }
-    });
-
-    const data = await result.map((transaction) => toTransactionDto(transaction));
-
-    return new TransactionsDataDto(data, count, balance);
-  }
-
   public async getLatestBlock(network: string): Promise<LatestBlockDto> {
     this.logger.debug(`About to get latest block`);
     const query = this.blockEntityRepository
@@ -251,18 +201,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
 
     const syncedBlock = await query.getRawOne();
     return new LatestBlockDto(syncedBlock.blockNumber);
-  }
-
-  public async getBalance(address: string, network: string): Promise<any> {
-    this.logger.debug(`About to get balance for: ${address}`);
-    const networkProp = this.networkMap.get(network);
-    const {
-      data: {free: balance},
-    } = await networkProp.api.query.system.account(address);
-    // TODO:https://cerenetwork.atlassian.net/browse/CBI-796
-    const decimal = 10;
-    const result = await formatBalance(balance, {decimals: decimal});
-    return result;
   }
 
   /**

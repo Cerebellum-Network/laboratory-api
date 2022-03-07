@@ -6,8 +6,9 @@ import {ConfigModule} from '../../../libs/config/src';
 import {HealthCheckController} from '../../../libs/health/src'
 import {FriendlyBotModule} from './modules/friendly-bot/friendly-bot.module';
 import {PeerModule} from './modules/peers/peer.module';
+import {BlockScannerModule} from './modules/block-scanner/block-scanner.module';
 @Module({
-  imports: [FriendlyBotModule, PeerModule, ConfigModule, DatabaseModule, HealthModule, ScheduleModule.forRoot()],
+  imports: [FriendlyBotModule, PeerModule, ConfigModule, DatabaseModule, HealthModule, ScheduleModule.forRoot(), BlockScannerModule],
   controllers: [HealthCheckController],
   providers: [],
 })

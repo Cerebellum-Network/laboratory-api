@@ -120,7 +120,8 @@
     ],
     "moduleNameMapper": {
       "^@app/config(|/.*)$": "<rootDir>/libs/config/src/$1",
-      "^@app/health(|/.*)$": "<rootDir>/libs/health/src/$1"
+      "^@app/health(|/.*)$": "<rootDir>/libs/health/src/$1",
+      "^@app/block-scanner(|/.*)$": "<rootDir>/libs/block-scanner/src/$1"
     }
   }
 }
