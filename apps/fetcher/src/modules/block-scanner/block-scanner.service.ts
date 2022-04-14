@@ -11,7 +11,6 @@ import {blake2AsU8a} from '@polkadot/util-crypto';
 import {BlockHash} from '@polkadot/types/interfaces/chain';
 import {GenericCall} from '@polkadot/types/generic';
 import {Codec, Registry} from '@polkadot/types/types';
-import {LatestBlockDto} from './dto/latest-block.dto';
 import config from '../../../../../libs/constants/config';
 import Deferred from 'promise-deferred';
 import {BlockEntity} from '../../../../../libs/block-scanner/src/entities/block.entity';
@@ -190,17 +189,6 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       this.logger.error(`Error in ${network} at ${blockNumber}, scan block ${error}`);
       throw error;
     }
-  }
-
-  public async getLatestBlock(network: string): Promise<LatestBlockDto> {
-    this.logger.debug(`About to get latest block`);
-    const query = this.blockEntityRepository
-      .createQueryBuilder('blocks')
-      .select('MAX(blocks.blockNumber)', 'blockNumber')
-      .where('blocks.networkType = :type', {type: network});
-
-    const syncedBlock = await query.getRawOne();
-    return new LatestBlockDto(syncedBlock.blockNumber);
   }
 
   /**

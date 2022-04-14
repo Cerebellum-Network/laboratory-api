@@ -4,6 +4,7 @@ import {ApiGatewayTimeoutResponse, ApiInternalServerErrorResponse, ApiTags} from
 import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 import {BalanceDto} from './dto/balance.dto';
+import {LatestBlockDto} from "./dto/latest-block.dto";
 
 @Controller('block-scanner')
 @ApiInternalServerErrorResponse({description: 'Internal server error.'})
@@ -11,6 +12,11 @@ import {BalanceDto} from './dto/balance.dto';
 @ApiTags('Block Scanner')
 export class BlockScannerController {
   public constructor(private readonly blockScannerService: BlockScannerService) {}
+
+  @Get('latest-block/:network')
+  public latestBlock(@Param('network') network: string): Promise<LatestBlockDto> {
+    return this.blockScannerService.getLatestBlock(network);
+  }
 
   @Get('account-blocks/:accountId/:network')
   public accountBlocks(

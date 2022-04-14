@@ -2,7 +2,6 @@ import {BadRequestException, Body, Controller, Get, Inject, Param, Post, Query, 
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {BlockScannerService} from './block-scanner.service';
 import {ApiGatewayTimeoutResponse, ApiInternalServerErrorResponse, ApiTags} from '@nestjs/swagger';
-import {LatestBlockDto} from './dto/latest-block.dto';
 import {PostRestartRequestDto} from './dto/restart.dto';
 import {ConfigService} from '../../../../../libs/config/src';
 
@@ -16,11 +15,6 @@ export class BlockScannerController {
     private readonly blockScannerService: BlockScannerService,
     private readonly configService: ConfigService,
   ) {}
-
-  @Get('latest-block/:network')
-  public latestBlock(@Param('network') network: string): Promise<LatestBlockDto> {
-    return this.blockScannerService.getLatestBlock(network);
-  }
 
   @Post('restart')
   public async restart(@Headers() headers, @Body() postRestartRequestDto: PostRestartRequestDto): Promise<any>{

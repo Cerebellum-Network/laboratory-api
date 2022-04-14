@@ -11,6 +11,7 @@ import {BlocksDataDto} from './dto/blocks-data.dto';
 import {BlockEntity} from '../../../../../libs/block-scanner/src/entities/block.entity';
 import {TransactionEntity} from '../../../../../libs/block-scanner/src/entities/transaction.entity';
 import config from '../../../../../libs/constants/config';
+import {LatestBlockDto} from "./dto/latest-block.dto";
 
 @Injectable()
 export class BlockScannerService {
@@ -50,6 +51,17 @@ export class BlockScannerService {
     this.logger.log(`Connected to ${chain}`);
 
     return api;
+  }
+
+  public async getLatestBlock(network: string): Promise<LatestBlockDto> {
+    this.logger.debug(`About to get latest block`);
+    const query = this.blockEntityRepository
+        .createQueryBuilder('blocks')
+        .select('MAX(blocks.blockNumber)', 'blockNumber')
+        .where('blocks.networkType = :type', {type: network});
+
+    const syncedBlock = await query.getRawOne();
+    return new LatestBlockDto(syncedBlock.blockNumber);
   }
 
   public async getAccountBlocks(
