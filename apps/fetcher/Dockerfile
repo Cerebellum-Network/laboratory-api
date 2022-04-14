@@ -8,6 +8,6 @@ RUN npm install
 
 RUN npm run build:fetcher; rm -f .npmrc
 
-EXPOSE 2016
+EXPOSE 1111
 
 CMD npm run start:prod:fetcher
