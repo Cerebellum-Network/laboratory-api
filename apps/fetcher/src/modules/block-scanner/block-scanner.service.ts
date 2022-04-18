@@ -15,6 +15,9 @@ import config from '../../../../../libs/constants/config';
 import Deferred from 'promise-deferred';
 import {BlockEntity} from '../../../../../libs/block-scanner/src/entities/block.entity';
 import {TransactionEntity} from '../../../../../libs/block-scanner/src/entities/transaction.entity';
+import {Cron} from "@nestjs/schedule";
+import {validatorStatus} from "../../../../../libs/health/src/validator-status.enum";
+import {ValidatorEntity} from "../../../../../libs/health/src/entities/validator.entity";
 
 export interface ISanitizedEvent {
   method: string;
@@ -60,6 +63,8 @@ export class BlockScannerService implements BlockScannerServiceInterface {
     private readonly blockEntityRepository: Repository<BlockEntity>,
     @InjectRepository(TransactionEntity)
     private readonly transactionEntityRepository: Repository<TransactionEntity>,
+    @InjectRepository(ValidatorEntity)
+    private readonly validatorEntityRepository: Repository<ValidatorEntity>,
     private readonly configService: ConfigService,
   ) {}
 
@@ -465,6 +470,40 @@ export class BlockScannerService implements BlockScannerServiceInterface {
       .values(transaction)
       .onConflict(`("transactionHash") DO NOTHING`)
       .execute();
+  }
+
+  /**
+   * Run cron job At minute 40 to check for slashed validator node.
+   */
+  @Cron('40 * * * *')
+  public async getSlashedValidator(): Promise<void> {
+    this.logger.log(`About to run cron for validator slashing`);
+    for (const [key, {api}] of this.networkMap) {
+      const currentEra = await api.query.staking.currentEra();
+      const result = await api.query.staking.unappliedSlashes(currentEra.toString());
+      if (result.length === 0) {
+        this.logger.debug(`No validator got slashed in ${currentEra.toString()} of ${key}`);
+      } else {
+        const slashedValidator: string[] = [];
+        result.forEach((element) => {
+          slashedValidator.push(element.validator.toString());
+        });
+        const query = await this.validatorEntityRepository
+            .createQueryBuilder('validator')
+            .select('MAX(validator.era)', 'era')
+            .where('validator.network = :network', {network: key});
+
+        const {era} = await query.getRawOne();
+        if (+era !== +currentEra) {
+          const validatorEntity = new ValidatorEntity();
+          validatorEntity.era = currentEra.toString();
+          validatorEntity.status = validatorStatus.NEW;
+          validatorEntity.validator = slashedValidator;
+          validatorEntity.network = key;
+          await this.validatorEntityRepository.save(validatorEntity);
+        }
+      }
+    }
   }
 
   private parseGenericCall(genericCall: GenericCall, registry: Registry): ISanitizedCall {

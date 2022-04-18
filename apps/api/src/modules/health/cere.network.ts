@@ -5,11 +5,10 @@ import config from '../../../../../libs/constants/config';
 import {IBlockchain} from './blockchain.interface';
 import {Repository} from 'typeorm';
 import {InjectRepository} from '@nestjs/typeorm';
-import {ValidatorEntity} from './entities/validator.entity';
-import {validatorStatus} from './validatorStatus.enum';
-import {Cron} from '@nestjs/schedule';
 import {BlockStatusDto} from './dto/block-status.dto';
 import {Wallet} from "./wallet.type";
+import {ValidatorEntity} from '../../../../../libs/health/src/entities/validator.entity';
+import {validatorStatus} from '../../../../../libs/health/src/validator-status.enum';
 
 export const CERE_NETWORK = 'CERE';
 
@@ -180,40 +179,6 @@ export class CereNetwork implements IBlockchain {
       return true;
     }
     return false;
-  }
-
-  /**
-   * Run cron job At minute 40 to check for slashed validator node.
-   */
-  @Cron('40 * * * *')
-  public async getSlashedValidator(): Promise<void> {
-    this.logger.log(`About to run cron for validator slashing`);
-    for (const [key, {api}] of this.network) {
-      const currentEra = await api.query.staking.currentEra();
-      const result = await api.query.staking.unappliedSlashes(currentEra.toString());
-      if (result.length === 0) {
-        this.logger.debug(`No validator got slashed in ${currentEra.toString()} of ${key}`);
-      } else {
-        const slashedValidator: string[] = [];
-        result.forEach((element) => {
-          slashedValidator.push(element.validator.toString());
-        });
-        const query = await this.validatorEntityRepository
-          .createQueryBuilder('validator')
-          .select('MAX(validator.era)', 'era')
-          .where('validator.network = :network', {network: key});
-
-        const {era} = await query.getRawOne();
-        if (+era !== +currentEra) {
-          const validatorEntity = new ValidatorEntity();
-          validatorEntity.era = currentEra.toString();
-          validatorEntity.status = validatorStatus.NEW;
-          validatorEntity.validator = slashedValidator;
-          validatorEntity.network = key;
-          await this.validatorEntityRepository.save(validatorEntity);
-        }
-      }
-    }
   }
 
   /**
