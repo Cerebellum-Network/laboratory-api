@@ -5,7 +5,7 @@ import {Module} from '@nestjs/common';
 import {ConfigModule} from '../../../../../libs/config/src/config.module'
 import {CereNetwork} from './cere.network';
 import {PolygonNetwork} from './polygon.network';
-import {ValidatorEntity} from "../../../../../libs/health/src/entities/validator.entity";
+import {ValidatorEntity} from '../../../../../libs/health/src/entities/validator.entity';
 
 @Module({
   imports: [ConfigModule, TypeOrmModule.forFeature([ValidatorEntity])],

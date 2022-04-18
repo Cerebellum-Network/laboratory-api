@@ -1,5 +1,5 @@
 import {TransactionDto} from '../dto/transaction.dto';
-import {TransactionEntity} from '../../../../../../libs/block-scanner/src/entities/transaction.entity'
+import {TransactionEntity} from '../../../../../../libs/block-scanner/src/entities/transaction.entity';
 
 export const toTransactionDto = (data: TransactionEntity): TransactionDto => {
   const {transactionHash, senderId, signature, transactionIndex, success, nonce, events, args, method, timestamp} = data;

@@ -4,7 +4,7 @@ import {ApiGatewayTimeoutResponse, ApiInternalServerErrorResponse, ApiTags} from
 import {TransactionsDataDto} from './dto/transactions-data.dto';
 import {BlocksDataDto} from './dto/blocks-data.dto';
 import {BalanceDto} from './dto/balance.dto';
-import {LatestBlockDto} from "./dto/latest-block.dto";
+import {LatestBlockDto} from './dto/latest-block.dto';
 
 @Controller('block-scanner')
 @ApiInternalServerErrorResponse({description: 'Internal server error.'})

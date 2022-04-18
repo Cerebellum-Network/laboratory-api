@@ -5,7 +5,7 @@ import {ConfigModule} from '../../../../../libs/config/src';
 import {TypeOrmModule} from '@nestjs/typeorm';
 import {BlockEntity} from '../../../../../libs/block-scanner/src/entities/block.entity';
 import {TransactionEntity} from '../../../../../libs/block-scanner/src/entities/transaction.entity';
-import {ValidatorEntity} from "../../../../../libs/health/src/entities/validator.entity";
+import {ValidatorEntity} from '../../../../../libs/health/src/entities/validator.entity';
 
 @Module({
   imports: [ConfigModule, TypeOrmModule.forFeature([BlockEntity, TransactionEntity, ValidatorEntity]), ConfigModule],

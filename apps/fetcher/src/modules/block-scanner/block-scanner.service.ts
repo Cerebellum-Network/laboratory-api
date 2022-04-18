@@ -1,4 +1,4 @@
-import {MethodName} from "../../../../../libs/constants/methodName";
+import {MethodName} from '../../../../../libs/constants/methodName';
 import {Injectable, Logger} from '@nestjs/common';
 import {BlockScannerServiceInterface} from './block-scanner.service.interface';
 import {ApiPromise, WsProvider} from '@polkadot/api';
@@ -15,9 +15,9 @@ import config from '../../../../../libs/constants/config';
 import Deferred from 'promise-deferred';
 import {BlockEntity} from '../../../../../libs/block-scanner/src/entities/block.entity';
 import {TransactionEntity} from '../../../../../libs/block-scanner/src/entities/transaction.entity';
-import {Cron} from "@nestjs/schedule";
-import {validatorStatus} from "../../../../../libs/health/src/validator-status.enum";
-import {ValidatorEntity} from "../../../../../libs/health/src/entities/validator.entity";
+import {Cron} from '@nestjs/schedule';
+import {validatorStatus} from '../../../../../libs/health/src/validator-status.enum';
+import {ValidatorEntity} from '../../../../../libs/health/src/entities/validator.entity';
 
 export interface ISanitizedEvent {
   method: string;

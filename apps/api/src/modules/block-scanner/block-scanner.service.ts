@@ -11,7 +11,7 @@ import {BlocksDataDto} from './dto/blocks-data.dto';
 import {BlockEntity} from '../../../../../libs/block-scanner/src/entities/block.entity';
 import {TransactionEntity} from '../../../../../libs/block-scanner/src/entities/transaction.entity';
 import config from '../../../../../libs/constants/config';
-import {LatestBlockDto} from "./dto/latest-block.dto";
+import {LatestBlockDto} from './dto/latest-block.dto';
 
 @Injectable()
 export class BlockScannerService {

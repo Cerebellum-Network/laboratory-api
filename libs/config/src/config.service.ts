@@ -1,6 +1,6 @@
 import dotenv from 'dotenv';
 import {Injectable} from '@nestjs/common';
-import {IConfigService} from './config.service.interface'
+import {IConfigService} from './config.service.interface';
 
 function getEnv() {
   return process.env.NODE_ENV || 'local';
