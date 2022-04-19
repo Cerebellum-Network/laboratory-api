@@ -1,4 +1,3 @@
-import {ScheduleModule} from '@nestjs/schedule';
 import {HealthModule} from './modules/health/health.module';
 import {Module} from '@nestjs/common';
 import {DatabaseModule} from '../../../libs/database/src';
@@ -7,8 +6,9 @@ import {HealthCheckController} from '../../../libs/health/src';
 import {FriendlyBotModule} from './modules/friendly-bot/friendly-bot.module';
 import {PeerModule} from './modules/peers/peer.module';
 import {BlockScannerModule} from './modules/block-scanner/block-scanner.module';
+
 @Module({
-  imports: [FriendlyBotModule, PeerModule, ConfigModule, DatabaseModule, HealthModule, ScheduleModule.forRoot(), BlockScannerModule],
+  imports: [FriendlyBotModule, PeerModule, ConfigModule, DatabaseModule, HealthModule, BlockScannerModule],
   controllers: [HealthCheckController],
   providers: [],
 })
