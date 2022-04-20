@@ -7,6 +7,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ## Release notes
 
 ### vNext
+* ...
+
+### v2.0.0
 * Separated api and fetcher into individual applications
 
 ### v1.19.0
