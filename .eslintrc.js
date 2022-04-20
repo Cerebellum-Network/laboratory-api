@@ -22,7 +22,7 @@ module.exports = {
     'object-curly-spacing': ['error', 'never'],
     'import/extensions': ['error', 'never'],
     'import/order': 'off',
-    'no-use-before-define': ['error', { 'functions': false }],
+    'no-use-before-define': ['error', {'functions': false}],
     '@typescript-eslint/no-inferrable-types': ['off'],
     'import/prefer-default-export': 'off',
     'no-await-in-loop': 'off',

@@ -1,7 +1,7 @@
 {
   "watch": [
-    "src",
-    "test"
+    "apps",
+    "libs"
   ],
   "ext": "ts",
   "exec": "ts-node src/main.ts"
