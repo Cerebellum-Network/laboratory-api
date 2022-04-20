@@ -200,11 +200,10 @@ $ nvm exec npm run test:cov
 ```
 
 ## Packaging 
+
 ### Run project from docker-compose:
-```
-* Start service
 ```bash
-docker-compose up
+docker-compose up -d
 ```
 
 ## License 
