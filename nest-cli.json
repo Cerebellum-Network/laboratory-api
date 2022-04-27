@@ -1,5 +1,67 @@
 {
-  "language": "ts",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "src"
+  "language": "ts",
+  "sourceRoot": "apps/api/src",
+  "monorepo": true,
+  "root": "apps/api",
+  "projects": {
+    "api": {
+      "type": "application",
+      "root": "apps/api",
+      "entryFile": "main",
+      "sourceRoot": "apps/api/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/api/tsconfig.api.json"
+      }
+    },
+    "config": {
+      "type": "library",
+      "root": "libs/config",
+      "entryFile": "index",
+      "sourceRoot": "libs/config/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/config/tsconfig.lib.json"
+      }
+    },
+    "database": {
+      "type": "library",
+      "root": "libs/database",
+      "entryFile": "index",
+      "sourceRoot": "libs/database/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/database/tsconfig.lib.json"
+      }
+    },
+    "fetcher": {
+      "type": "application",
+      "root": "apps/fetcher",
+      "entryFile": "main",
+      "sourceRoot": "apps/fetcher/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/fetcher/tsconfig.app.json"
+      }
+    },
+    "health": {
+      "type": "library",
+      "root": "libs/health",
+      "entryFile": "index",
+      "sourceRoot": "libs/health/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/health/tsconfig.lib.json"
+      }
+    },
+    "block-scanner": {
+      "type": "library",
+      "root": "libs/block-scanner",
+      "entryFile": "index",
+      "sourceRoot": "libs/block-scanner/src",
+      "compilerOptions": {
+        "tsConfigPath": "libs/block-scanner/tsconfig.lib.json"
+      }
+    }
+  },
+  "compilerOptions": {
+    "webpack": true,
+    "tsConfigPath": "apps/api/tsconfig.api.json"
+  }
 }

@@ -1,28 +1,32 @@
 {
   "name": "@Cerebellum-Network/laboratory-api",
   "repository": "git://github.com/Cerebellum-Network/laboratory-api.git",
-  "version": "1.19.0",
+  "version": "2.0.0",
   "description": "",
   "author": "",
   "license": "MIT",
   "scripts": {
     "init": "npm i",
-    "build": "rimraf dist && tsc -p tsconfig.build.json",
-    "format": "prettier --write \"src/**/*.ts\"",
+    "build:api": "rimraf dist && tsc -p apps/api/tsconfig.build.json",
+    "build:fetcher": "rimraf dist && tsc -p apps/fetcher/tsconfig.build.json",
+    "format": "prettier --write \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "prestart:dev": "npm run typeorm:migration:run",
     "prestart:prod": "npm run typeorm:migration:run",
-    "start": "ts-node -r tsconfig-paths/register src/main.ts",
-    "start:dev": "nodemon --exec \"npm run lint && ts-node src/main.ts\"",
+    "start:api": "ts-node -r tsconfig-paths/register apps/api/src/main.ts",
+    "start:fetcher": "ts-node -r tsconfig-paths/register apps/fetcher/src/main.ts",
+    "start:dev:api": "nodemon --exec \"npm run lint && ts-node apps/api/src/main.ts apps/api\"",
+    "start:dev:fetcher": "nodemon --exec \"npm run lint && ts-node apps/fetcher/src/main.ts apps/fetcher\"",
     "start:debug": "tsc-watch -p tsconfig.build.json --onSuccess \"node --inspect-brk dist/main.js\"",
-    "start:prod": "node dist/src/main.js",
-    "lint": "eslint \"{src,test}/**/*.ts\"",
+    "start:prod:api": "node dist/apps/api/src/main.js",
+    "start:prod:fetcher": "node dist/apps/fetcher/src/main.js",
+    "lint": "eslint \"apps/**/*.ts\" \"libs/**/*.ts\"",
     "test": "jest",
     "pretest": "npm run lint",
     "test:watch": "jest --watch",
     "test:cov": "jest --coverage",
     "test:debug": "node --inspect-brk -r tsconfig-paths/register -r ts-node/register node_modules/.bin/jest --runInBand",
-    "test:e2e": "jest --config ./test/jest-e2e.json",
-    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js --config src/modules/database/ormconfig.ts",
+    "test:e2e": "jest --config ./api/apps/Cerebellum-Network-laboratory-api/test/jest-e2e.json",
+    "typeorm": "ts-node -r tsconfig-paths/register ./node_modules/typeorm/cli.js --config libs/database/src/ormconfig.ts",
     "typeorm:migration:create": "npm run typeorm -- migration:create -n",
     "typeorm:migration:run": "npm run typeorm -- migration:run"
   },
@@ -90,6 +94,7 @@
     "prettier": "^2.1.2",
     "supertest": "^4.0.2",
     "ts-jest": "^26.4.0",
+    "ts-loader": "^9.2.6",
     "ts-node": "^9.0.0",
     "tsc-watch": "^4.2.9",
     "tsconfig-paths": "^3.9.0",
@@ -102,12 +107,21 @@
       "json",
       "ts"
     ],
-    "rootDir": "src",
+    "rootDir": ".",
     "testRegex": ".spec.ts$",
     "transform": {
       "^.+\\.(t|j)s$": "ts-jest"
     },
-    "coverageDirectory": "../coverage",
-    "testEnvironment": "node"
+    "coverageDirectory": "./coverage",
+    "testEnvironment": "node",
+    "roots": [
+      "<rootDir>/libs/",
+      "<rootDir>/apps/"
+    ],
+    "moduleNameMapper": {
+      "^@app/config(|/.*)$": "<rootDir>/libs/config/src/$1",
+      "^@app/health(|/.*)$": "<rootDir>/libs/health/src/$1",
+      "^@app/block-scanner(|/.*)$": "<rootDir>/libs/block-scanner/src/$1"
+    }
   }
 }
