@@ -60,8 +60,11 @@ export class HealthService {
    * @returns notified status
    */
   public async nodeDropped(network: string): Promise<any> {
+    this.logger.log(`in nodeDropped`);
     const currentBlockchain = this.getBlockchainInstance(CERE_NETWORK);
+    this.logger.log(`About to get dropped node`);
     const result = await currentBlockchain.getDroppedNode(network);
+    this.logger.log(`About to return result`);
     return result;
   }
 

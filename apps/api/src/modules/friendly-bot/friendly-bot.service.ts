@@ -66,6 +66,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
 
   public async issueToken(destination: string, network: string): Promise<AssetDto> {
     // formatBalance(balance, {decimals: Number(decimal)});
+    this.logger.log(`in issueToken`);
     if (network.includes('MAINNET')) {
       throw new BadRequestException(`Can't process this request for Mainnet.`);
     }
@@ -73,6 +74,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
       throw new BadRequestException(`Invalid network type.`);
     }
     const networkParam = this.networkParams.find((item) => item.type === network);
+    this.logger.log(`About to get balance for ${destination}`);
     const {balance} = await this.getBalance(destination, network);
     // TODO: https://cerenetwork.atlassian.net/browse/CBI-796
     const decimal = 10;
@@ -87,6 +89,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     }
 
     const time = moment(new Date()).format('YYYY-MM-DD');
+    this.logger.log(`About to get count from DB`);
     const count = await this.botEntityRepository
       .createQueryBuilder('bots')
       .where('DATE(bots.createdAt) = :date', {date: time})
@@ -98,6 +101,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     if (maxRequestPerDay < count) {
       throw new BadRequestException(`We exceed our daily limit: ${maxRequestPerDay}. Kindly try tomorrow`);
     }
+    this.logger.log(`About to transfer tokens`);
     const hash = (await this.transfer(destination, actualValue.toString(), network)).toString();
     const botEntity = new PayoutEntity();
     botEntity.destination = destination;
@@ -105,6 +109,7 @@ export class FriendlyBotService implements FriendlyBotServiceInterface {
     botEntity.value = value;
     botEntity.sender = networkParam.faucet.address;
     botEntity.network = networkParam.type;
+    this.logger.log(`About to save entity`);
     await this.botEntityRepository.save(botEntity);
 
     return new AssetDto(hash);
