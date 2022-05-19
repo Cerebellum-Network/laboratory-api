@@ -7,6 +7,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ## Release notes
 
 ### vNext
+* ...
+
+### v2.1.0
 * Updated QAnet/Testnet/Mainnet urls
 
 ### v2.0.0
