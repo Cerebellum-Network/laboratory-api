@@ -1,7 +1,7 @@
 {
   "name": "@Cerebellum-Network/laboratory-api",
   "repository": "git://github.com/Cerebellum-Network/laboratory-api.git",
-  "version": "2.1.0",
+  "version": "2.1.1",
   "description": "",
   "author": "",
   "license": "MIT",
@@ -16,7 +16,7 @@
     "start:fetcher": "ts-node -r tsconfig-paths/register apps/fetcher/src/main.ts",
     "start:dev:api": "nodemon --exec \"npm run lint && ts-node apps/api/src/main.ts apps/api\"",
     "start:dev:fetcher": "nodemon --exec \"npm run lint && ts-node apps/fetcher/src/main.ts apps/fetcher\"",
-    "start:debug": "tsc-watch -p tsconfig.build.json --onSuccess \"node --inspect-brk dist/main.js\"",
+    "start:debug:api": "nodemon --exec \"npm run lint && node --require ts-node/register --inspect apps/api/src/main.ts apps/api\"",
     "start:prod:api": "node dist/apps/api/src/main.js",
     "start:prod:fetcher": "node dist/apps/fetcher/src/main.js",
     "lint": "eslint \"apps/**/*.ts\" \"libs/**/*.ts\"",
