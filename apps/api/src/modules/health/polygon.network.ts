@@ -17,6 +17,8 @@ export class PolygonNetwork implements IBlockchain {
 
   private accounts: Map<string, {account: [Wallet]}> = new Map<string, {account: [Wallet]}>();
 
+  private contracts: Map<string, any> = new Map<string, any>();
+
   public constructor(private readonly configService: ConfigService) {
     this.init();
   }
@@ -83,7 +85,11 @@ export class PolygonNetwork implements IBlockchain {
   }
 
   public async getBalanceErc20Token(api: Web3, address: string, erc20TokenAddress: string): Promise<number> {
-    const erc20TokenContractInstance = new api.eth.Contract(erc20Abi as AbiItem[], erc20TokenAddress);
+    let erc20TokenContractInstance = this.contracts.get(erc20TokenAddress);
+    if (!erc20TokenContractInstance) {
+      erc20TokenContractInstance = new api.eth.Contract(erc20Abi as AbiItem[], erc20TokenAddress);
+      this.contracts.set(erc20TokenAddress, erc20TokenContractInstance);
+    }
     const results = await Promise.all([erc20TokenContractInstance.methods.balanceOf(address).call(), erc20TokenContractInstance.methods.decimals().call()]);
     const balance = results[0];
     const decimals = results[1];
