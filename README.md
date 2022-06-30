@@ -9,6 +9,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### vNext
 * ...
 
+### v2.1.3
+* Added timeout
+
 ### v2.1.2
 * Updated Devnet urls
 

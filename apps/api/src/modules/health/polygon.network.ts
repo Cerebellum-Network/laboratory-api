@@ -8,6 +8,7 @@ import erc20Abi from "./abis/erc20Abi.json";
 import {AbiItem} from "web3-utils";
 
 export const POLYGON_NETWORK = 'POLYGON';
+export const TIMEOUT_MS = 60000;
 
 @Injectable()
 export class PolygonNetwork implements IBlockchain {
@@ -29,7 +30,7 @@ export class PolygonNetwork implements IBlockchain {
       if (element.blockchain === POLYGON_NETWORK) {
         element.data.forEach((data) => {
           this.accounts.set(data.network, {account: data.accounts});
-          this.network.set(data.network, {api: new Web3(new Web3.providers.HttpProvider(data.rpc))});
+          this.network.set(data.network, {api: new Web3(new Web3.providers.HttpProvider(data.rpc, {timeout: TIMEOUT_MS}))});
         });
       }
     });
