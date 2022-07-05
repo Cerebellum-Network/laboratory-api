@@ -9,6 +9,9 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ### vNext
 * ...
 
+### v2.2.0
+* Migrated to GitHub actions
+
 ### v2.1.3
 * Added timeout
 
