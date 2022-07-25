@@ -7,7 +7,7 @@ This application is supposed to be used as API for [Laboratory UI](https://githu
 ## Release notes
 
 ### vNext
-* ...
+* Removed v2 subdomains from public urls
 
 ### v2.2.0
 * Migrated to GitHub actions
